@@ -6,6 +6,8 @@
 #define CODIGO_IDENTIFICADOR -1
 #define CODIGO_NUMERO -2
 #define CODIGO_ERRO -99
+#define CODIGO_FINAL -3
+#define STRING_FINAL "#"
 
 const std::unordered_map<std::string, int> simbolos_especiais = {
     {".", 1},   {":", 2},   {",", 3},  {"(", 4},   {")", 5},
@@ -55,7 +57,7 @@ token analisador_lexico(std::string::iterator &prox,
     prox++;
 
   if (prox == end)
-    return {"Fim de cadeia.", CODIGO_ERRO};
+    return {STRING_FINAL, CODIGO_FINAL};
 
   std::string s(1, *prox);
   if (simbolos_especiais.find(s) != simbolos_especiais.end()) {
@@ -70,8 +72,8 @@ token analisador_lexico(std::string::iterator &prox,
     return {s, simbolos_especiais.find(s)->second};
   }
 
-  if (islower(*prox)) {
-    while (prox != end && (islower(*prox) || isdigit(*prox))) {
+  if (isalpha(*prox)) {
+    while (prox != end && (isalpha(*prox) || isdigit(*prox))) {
       atom.push_back(*prox);
       prox++;
     }
@@ -87,7 +89,7 @@ token analisador_lexico(std::string::iterator &prox,
       atom.push_back(*prox);
       prox++;
     }
-    if (prox != end && islower(*prox)) {
+    if (prox != end && (isalpha(*prox))) {
       return {"Letra em meio de numero.", CODIGO_ERRO};
     }
     return {atom, CODIGO_NUMERO};
