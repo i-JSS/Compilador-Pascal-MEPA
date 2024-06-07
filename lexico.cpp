@@ -1,9 +1,25 @@
 #include <cctype>
-#include <cstdio>
 #include <iostream>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+const std::vector<std::string> tokenTypeNames = {
+    "Empty token", "Error token",  "Identifier token",      "Number token",
+    "Eof token",   "Symbol token", "Compound symbol token", "Keyword token",
+};
+
+enum TokenType {
+  TOKENTYPE_EMPTY,
+  TOKENTYPE_ERROR,
+  TOKENTYPE_IDENTIFIER,
+  TOKENTYPE_NUMBER,
+  TOKENTYPE_EOF,
+  TOKENTYPE_SYMBOL,
+  TOKENTYPE_COMPOUNDSYMBOL,
+  TOKENTYPE_KEYWORD,
+};
 
 enum TokenCode {
   // Tokens especiais 0xx:
@@ -57,28 +73,36 @@ enum TokenCode {
   TOKEN_NOT            // 318 - not
 };
 
-bool isIdentifier(TokenCode token_code) {
-  return token_code == TOKEN_IDENTIFIER;
-}
-
-bool isNumber(TokenCode token_code) { return token_code == TOKEN_NUMBER; }
-
-bool isSpecialSymbol(TokenCode token_code) {
-  return token_code < 200 && token_code >= 100;
-}
-
-bool isCompoundSymbol(TokenCode token_code) {
-  return token_code < 300 && token_code >= 200;
-}
-
-bool isKeyword(TokenCode token_code) {
-  return token_code < 400 && token_code >= 300;
-}
-
 struct token {
   std::string content;
-  int code;
+  TokenCode code;
 };
+
+TokenType getTokenType(TokenCode code) {
+  switch (code) {
+  case TOKEN_EMPTY:
+    return TOKENTYPE_EMPTY;
+  case TOKEN_ERROR:
+    return TOKENTYPE_ERROR;
+  case TOKEN_IDENTIFIER:
+    return TOKENTYPE_IDENTIFIER;
+  case TOKEN_NUMBER:
+    return TOKENTYPE_NUMBER;
+  case TOKEN_EOF:
+    return TOKENTYPE_EOF;
+  }
+
+  if (code < 200 && code >= 100)
+    return TOKENTYPE_SYMBOL;
+
+  if (code < 300 && code >= 200)
+    return TOKENTYPE_COMPOUNDSYMBOL;
+
+  if (code < 400 && code >= 300)
+    return TOKENTYPE_KEYWORD;
+
+  return TOKENTYPE_ERROR;
+}
 
 const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
     {".", TOKEN_DOT},       {":", TOKEN_COLON},       {",", TOKEN_COMMA},
@@ -170,11 +194,31 @@ std::string read_source_file() {
   return source_code;
 }
 
+std::map<TokenType, int> countTokenTypes(std::vector<token> tokens) {
+
+  std::map<TokenType, int> counts = {{TOKENTYPE_EMPTY, 0},
+                                     {TOKENTYPE_ERROR, 0},
+                                     {TOKENTYPE_IDENTIFIER, 0},
+                                     {TOKENTYPE_NUMBER, 0},
+                                     {TOKENTYPE_EOF, 0},
+                                     {TOKENTYPE_SYMBOL, 0},
+                                     {TOKENTYPE_COMPOUNDSYMBOL, 0},
+                                     {TOKENTYPE_KEYWORD, 0}};
+  for (token &t : tokens) {
+    TokenType type = getTokenType(t.code);
+    counts.find(type)->second++;
+  }
+
+  return counts;
+}
+
 int main() {
   std::string source_code = read_source_file();
   std::vector<token> tokens = getTokens(source_code);
+  auto counts = countTokenTypes(tokens);
 
-  for (token &t : tokens) {
-    std::cout << t.code << " - " << t.content << '\n';
+  for (auto &count : counts) {
+    std::string name = tokenTypeNames[count.first];
+    std::cout << name << " - " << count.second << "\n";
   }
 }
