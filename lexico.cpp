@@ -1,4 +1,5 @@
 #include <cctype>
+#include <cstdio>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -10,6 +11,7 @@ enum TokenCode {
   TOKEN_ERROR,      // 1 - (Error token)
   TOKEN_IDENTIFIER, // 2 - (Identifier token)
   TOKEN_NUMBER,     // 3 - (Number token)
+  TOKEN_EOF,        // 4 - (Token for end of file)
 
   // Simbolos Especiais 1xx:
   TOKEN_DOT = 100,  // 100 - .
@@ -114,7 +116,7 @@ token analisador_lexico(std::string::iterator &prox,
     ;
 
   if (prox == end)
-    return {"Fim de cadeia.", TOKEN_ERROR};
+    return {"#", TOKEN_EOF};
 
   std::string s(1, *prox);
   if (simbolos_especiais.find(s) != simbolos_especiais.end()) {
@@ -129,8 +131,8 @@ token analisador_lexico(std::string::iterator &prox,
     return {s, simbolos_especiais.find(s)->second};
   }
 
-  if (islower(*prox)) {
-    while (prox != end && (islower(*prox) || isdigit(*prox)))
+  if (isalpha(*prox)) {
+    while (prox != end && (isalpha(*prox) || isdigit(*prox)))
       atom.push_back(*prox++);
     if (palavras_chave.find(atom) != palavras_chave.end())
       return {atom, palavras_chave.find(atom)->second};
@@ -141,7 +143,7 @@ token analisador_lexico(std::string::iterator &prox,
   if (isdigit(*prox)) {
     while (prox != end && isdigit(*prox))
       atom.push_back(*prox++);
-    if (prox != end && islower(*prox))
+    if (prox != end && isalpha(*prox))
       return {"Letra em meio de numero.", TOKEN_ERROR};
     else
       return {atom, TOKEN_NUMBER};
@@ -149,44 +151,30 @@ token analisador_lexico(std::string::iterator &prox,
   return {"Token inesperado.", TOKEN_ERROR};
 }
 
-int main() {
+std::vector<token> getTokens(std::string source_code) {
+  auto it = source_code.begin();
+  std::vector<token> tokens;
+
+  do {
+    tokens.push_back(analisador_lexico(it, source_code.end()));
+  } while (tokens.back().code != TOKEN_EOF);
+  return tokens;
+}
+
+std::string read_source_file() {
   std::string buffer;
   std::string source_code;
-
-  std::vector<std::pair<int, std::string>> vetor = {
-      {0, "EMPTY"},    {0, "ERRO"},  {0, "IDENTIFICADOR"},
-      {0, "NUMERO"},   {0, "."},     {0, ":"},
-      {0, ","},        {0, "("},     {0, ")"},
-      {0, "="},        {0, "<"},     {0, ">"},
-      {0, "+"},        {0, "-"},     {0, "*"},
-      {0, "["},        {0, "]"},     {0, ";"},
-      {0, "'"},        {0, ":="},    {0, ".."},
-      {0, "(*"},       {0, "*)"},    {0, "program"},
-      {0, "label"},    {0, "type"},  {0, "array"},
-      {0, "of"},       {0, "var"},   {0, "procedure"},
-      {0, "function"}, {0, "begin"}, {0, "end"},
-      {0, "if"},       {0, "then"},  {0, "else"},
-      {0, "while"},    {0, "do"},    {0, "or"},
-      {0, "div"},      {0, "not"}};
-
   while (std::getline(std::cin, buffer))
     source_code += buffer;
 
-  std::cout << source_code << '\n';
-  auto it = source_code.begin();
-  std::vector<token> tokens;
-  while (it != source_code.end()) {
-    token t = analisador_lexico(it, source_code.end());
-    if (t.code == -99) {
-      std::cout << t.code << " - " << t.content << '\n';
-      break;
-    }
-    tokens.push_back(t);
-    vetor[t.code].first++;
-    std::cout << t.code << " - " << t.content << '\n';
-  }
+  return source_code;
+}
 
-  for (int i = 2; i <= 40; i++) {
-    printf("<%s>\t%d\n", vetor[i].second.c_str(), vetor[i].first);
+int main() {
+  std::string source_code = read_source_file();
+  std::vector<token> tokens = getTokens(source_code);
+
+  for (token &t : tokens) {
+    std::cout << t.code << " - " << t.content << '\n';
   }
 }
