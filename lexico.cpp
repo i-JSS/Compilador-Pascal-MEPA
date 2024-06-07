@@ -55,6 +55,24 @@ enum TokenCode {
   TOKEN_NOT            // 318 - not
 };
 
+bool isIdentifier(TokenCode token_code) {
+  return token_code == TOKEN_IDENTIFIER;
+}
+
+bool isNumber(TokenCode token_code) { return token_code == TOKEN_NUMBER; }
+
+bool isSpecialSymbol(TokenCode token_code) {
+  return token_code < 200 && token_code >= 100;
+}
+
+bool isCompoundSymbol(TokenCode token_code) {
+  return token_code < 300 && token_code >= 200;
+}
+
+bool isKeyword(TokenCode token_code) {
+  return token_code < 400 && token_code >= 300;
+}
+
 struct token {
   std::string content;
   int code;
