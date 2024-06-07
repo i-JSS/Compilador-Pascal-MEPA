@@ -77,7 +77,6 @@ const std::unordered_map<String, TokenCode> palavras_chave = {
         {"or", TOKEN_OR}, {"div", TOKEN_DIV}, {"not", TOKEN_NOT}
 };
 
-
 token analisador_lexico(std::string::iterator &prox,const std::string::iterator &end) {
     String atom;
     for(; prox!=end && *prox==' '; prox++);
@@ -116,9 +115,26 @@ token analisador_lexico(std::string::iterator &prox,const std::string::iterator 
     return {"Token inesperado.", TOKEN_ERROR};
 }
 
+
 int main() {
-    std::string buffer;
-    std::string source_code;
+    String buffer;
+    String source_code;
+
+    std::vector<std::pair<int, String>> vetor = {
+            {0, "EMPTY"}, {0, "ERRO"},
+            {0, "IDENTIFICADOR"}, {0, "NUMERO"},
+            {0, "."},   {0, ":"},   {0, ","},  {0, "("},
+            {0, ")"}, {0, "="},   {0, "<"},     {0, ">"},
+            {0, "+"},   {0, "-"},   {0, "*"},   {0, "["},
+            {0, "]"}, {0, ";"}, {0, "'"},
+            {0, ":="}, {0, ".."}, {0, "(*"}, {0, "*)"},
+            {0, "program"}, {0, "label"}, {0, "type"},
+            {0, "array"}, {0, "of"}, {0, "var"}, {0, "procedure"},
+            {0, "function"}, {0, "begin"}, {0, "end"}, {0, "if"},
+            {0, "then"}, {0, "else"}, {0, "while"}, {0, "do"},
+            {0, "or"}, {0, "div"}, {0, "not"}
+    };
+
     while (std::getline(std::cin, buffer))
         source_code += buffer;
 
@@ -132,6 +148,12 @@ int main() {
             break;
         }
         tokens.push_back(t);
+        vetor[t.code].first++;
         std::cout << t.code << " - " << t.content << '\n';
     }
+
+    for(int i = 2; i <= 40; i++) {
+        printf("<%s>\t%d\n", vetor[i].second.c_str(), vetor[i].first);
+    }
+
 }
