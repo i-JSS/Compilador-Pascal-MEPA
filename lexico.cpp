@@ -5,53 +5,54 @@
 #include <vector>
 
 enum TokenCode {
-  TOKEN_EMPTY,      // 0 - (Empty token)
+  // Tokens especiais 0xx:
+  TOKEN_EMPTY = 0,  // 0 - (Empty token)
   TOKEN_ERROR,      // 1 - (Error token)
   TOKEN_IDENTIFIER, // 2 - (Identifier token)
   TOKEN_NUMBER,     // 3 - (Number token)
 
-  // Simbolos Especiais:
-  TOKEN_DOT,        // 4 - .
-  TOKEN_COLON,      // 5 - :
-  TOKEN_COMMA,      // 6 - ,
-  TOKEN_LPAREN,     // 7 - (
-  TOKEN_RPAREN,     // 8 - )
-  TOKEN_EQUAL,      // 9 - =
-  TOKEN_LT,         // 10 - <
-  TOKEN_GT,         // 11 - >
-  TOKEN_PLUS,       // 12 - +
-  TOKEN_MINUS,      // 13 - -
-  TOKEN_STAR,       // 14 - *
-  TOKEN_LBRACKET,   // 15 - [
-  TOKEN_RBRACKET,   // 16 - ]
-  TOKEN_SEMICOLON,  // 17 - ;
-  TOKEN_APOSTROPHE, // 18 - '
+  // Simbolos Especiais 1xx:
+  TOKEN_DOT = 100,  // 100 - .
+  TOKEN_COLON,      // 101 - :
+  TOKEN_COMMA,      // 102 - ,
+  TOKEN_LPAREN,     // 103 - (
+  TOKEN_RPAREN,     // 104 - )
+  TOKEN_EQUAL,      // 105 - =
+  TOKEN_LT,         // 106 - <
+  TOKEN_GT,         // 107 - >
+  TOKEN_PLUS,       // 108 - +
+  TOKEN_MINUS,      // 109 - -
+  TOKEN_STAR,       // 110 - *
+  TOKEN_LBRACKET,   // 111 - [
+  TOKEN_RBRACKET,   // 112 - ]
+  TOKEN_SEMICOLON,  // 113 - ;
+  TOKEN_APOSTROPHE, // 114 - '
 
-  // Simbolos Especiais Compostos
-  TOKEN_ASSIGNMENT, // 19 - :=
-  TOKEN_SUBRANGE,   // 20 - ..
-  TOKEN_LCOMMENT,   // 21 - (*
-  TOKEN_RCOMMENT,   // 22 - *)
+  // Simbolos Especiais Compostos 2xx:
+  TOKEN_ASSIGNMENT = 200, // 200 - :=
+  TOKEN_SUBRANGE,         // 201 - ..
+  TOKEN_LCOMMENT,         // 202 - (*
+  TOKEN_RCOMMENT,         // 203 - *)
 
-  // Palavras-chave
-  TOKEN_PROGRAM,   // 23 - program
-  TOKEN_LABEL,     // 24 - label
-  TOKEN_TYPE,      // 25 - type
-  TOKEN_ARRAY,     // 26 - array
-  TOKEN_OF,        // 27 - of
-  TOKEN_VAR,       // 28 - var
-  TOKEN_PROCEDURE, // 29 - procedure
-  TOKEN_FUNCTION,  // 30 - function
-  TOKEN_BEGIN,     // 31 - begin
-  TOKEN_END,       // 32 - end
-  TOKEN_IF,        // 33 - if
-  TOKEN_THEN,      // 34 - then
-  TOKEN_ELSE,      // 35 - else
-  TOKEN_WHILE,     // 36 - while
-  TOKEN_DO,        // 37 - do
-  TOKEN_OR,        // 38 - or
-  TOKEN_DIV,       // 39 - div
-  TOKEN_NOT        // 40 - not
+  // Palavras-chave 3xx:
+  TOKEN_PROGRAM = 300, // 301 - program
+  TOKEN_LABEL,         // 302 - label
+  TOKEN_TYPE,          // 303 - type
+  TOKEN_ARRAY,         // 304 - array
+  TOKEN_OF,            // 305 - of
+  TOKEN_VAR,           // 306 - var
+  TOKEN_PROCEDURE,     // 307 - procedure
+  TOKEN_FUNCTION,      // 308 - function
+  TOKEN_BEGIN,         // 309 - begin
+  TOKEN_END,           // 310 - end
+  TOKEN_IF,            // 311 - if
+  TOKEN_THEN,          // 312 - then
+  TOKEN_ELSE,          // 313 - else
+  TOKEN_WHILE,         // 314 - while
+  TOKEN_DO,            // 315 - do
+  TOKEN_OR,            // 316 - or
+  TOKEN_DIV,           // 317 - div
+  TOKEN_NOT            // 318 - not
 };
 
 struct token {
