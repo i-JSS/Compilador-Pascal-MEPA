@@ -148,9 +148,21 @@ token analisador_lexico(std::string::iterator &prox,
     if (s == ":" && *prox == '=') {
       s = ":=";
       prox++;
-    } else if (s == "." && *prox == '.') {
+    }
+    else if (s == "." && *prox == '.') {
       s = "..";
       prox++;
+    }
+    else if(s == "(" && *prox == '*'){
+      prox++;
+      while(prox != end){
+        if(*prox == '*' && (prox+1)!=end && *(prox+1) == ')'){
+          prox +=2;
+          return analisador_lexico(prox, end);
+        }
+        prox++;
+      }
+      return {"Fechamento de comentario não identificado", TOKEN_ERROR};
     }
     return {s, simbolos_especiais.find(s)->second};
   }
