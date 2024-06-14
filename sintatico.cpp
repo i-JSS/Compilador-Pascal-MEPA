@@ -151,16 +151,6 @@ token analisador_lexico(std::string::iterator &prox,
     } else if (s == "." && *prox == '.') {
       s = "..";
       prox++;
-    } else if (s == "(" && *prox == '*') {
-      prox++;
-      while (prox != end) {
-        if (*prox == '*' && (prox + 1) != end && *(prox + 1) == ')') {
-          prox += 2;
-          return analisador_lexico(prox, end);
-        }
-        prox++;
-      }
-      return {"Fechamento de comentario não identificado", TOKEN_ERROR};
     }
     return {s, simbolos_especiais.find(s)->second};
   }
@@ -220,6 +210,48 @@ std::map<TokenType, int> countTokenTypes(std::vector<token> tokens) {
   }
 
   return counts;
+}
+
+void erro() {
+  std::cout << "Erro\n";
+  exit(1);
+}
+
+void lista_de_identificadores(std::vector<token>::iterator simbolo) {
+  if (simbolo->code != TOKEN_IDENTIFIER)
+    erro();
+  simbolo++;
+  while (simbolo->code == TOKEN_COMMA) {
+    simbolo++;
+    if (simbolo->code != TOKEN_IDENTIFIER)
+      erro();
+    simbolo++;
+  }
+}
+
+void bloco() {}
+
+void programa(std::vector<token>::iterator simbolo) {
+  if (simbolo->code != TOKEN_PROGRAM)
+    erro();
+  simbolo++;
+  if (simbolo->code != TOKEN_IDENTIFIER)
+    erro();
+  simbolo++;
+  if (simbolo->code != TOKEN_LPAREN)
+    erro();
+  simbolo++;
+  lista_de_identificadores(simbolo);
+  if (simbolo->code != TOKEN_RPAREN)
+    erro();
+  simbolo++;
+  if (simbolo->code != TOKEN_SEMICOLON)
+    erro();
+  simbolo++;
+  bloco();
+  if (simbolo->code != TOKEN_DOT)
+    erro();
+  simbolo++;
 }
 
 int main() {
