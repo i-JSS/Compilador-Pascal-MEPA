@@ -85,7 +85,7 @@ enum TokenCode {
 };
 
 struct token {
-  std::string content;
+  std::wstring content;
   TokenCode code;
 };
 
@@ -107,65 +107,65 @@ TokenType getTokenType(TokenCode code) {
   return TOKENTYPE_UNKNOWN;
 }
 
-const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
-    {".", TOKEN_DOT},      {":", TOKEN_COLON},       {",", TOKEN_COMMA},
-    {"(", TOKEN_LPAREN},   {")", TOKEN_RPAREN},      {"=", TOKEN_EQUAL},
-    {"<", TOKEN_LT},       {">", TOKEN_GT},          {"+", TOKEN_PLUS},
-    {"-", TOKEN_MINUS},    {"*", TOKEN_STAR},        {"[", TOKEN_LBRACKET},
-    {"]", TOKEN_RBRACKET}, {":=", TOKEN_ASSIGNMENT}, {"<=", TOKEN_LE},
-    {">=", TOKEN_GE},      {"<>", TOKEN_NE},         {";", TOKEN_SEMICOLON},
-    {"/", TOKEN_SLASH},    {"\'", TOKEN_APOSTROPHE}, {"\"", TOKEN_QUOTES}};
+const std::unordered_map<std::wstring, TokenCode> simbolos_especiais = {
+    {L".", TOKEN_DOT},      {L":", TOKEN_COLON},       {L",", TOKEN_COMMA},
+    {L"(", TOKEN_LPAREN},   {L")", TOKEN_RPAREN},      {L"=", TOKEN_EQUAL},
+    {L"<", TOKEN_LT},       {L">", TOKEN_GT},          {L"+", TOKEN_PLUS},
+    {L"-", TOKEN_MINUS},    {L"*", TOKEN_STAR},        {L"[", TOKEN_LBRACKET},
+    {L"]", TOKEN_RBRACKET}, {L":=", TOKEN_ASSIGNMENT}, {L"<=", TOKEN_LE},
+    {L">=", TOKEN_GE},      {L"<>", TOKEN_NE},         {L";", TOKEN_SEMICOLON},
+    {L"/", TOKEN_SLASH},    {L"\'", TOKEN_APOSTROPHE}, {L"\"", TOKEN_QUOTES}};
 
-const std::unordered_map<std::string, TokenCode> palavras_chave = {
-    {"program", TOKEN_PROGRAM},
-    {"label", TOKEN_LABEL},
-    {"type", TOKEN_TYPE},
-    {"array", TOKEN_ARRAY},
-    {"var", TOKEN_VAR},
-    {"procedure", TOKEN_PROCEDURE},
-    {"function", TOKEN_FUNCTION},
-    {"begin", TOKEN_BEGIN},
-    {"end", TOKEN_END},
-    {"if", TOKEN_IF},
-    {"then", TOKEN_THEN},
-    {"else", TOKEN_ELSE},
-    {"while", TOKEN_WHILE},
-    {"do", TOKEN_DO},
-    {"div", TOKEN_DIV},
-    {"and", TOKEN_AND},
-    {"goto", TOKEN_GOTO},
-    {"read", TOKEN_READ},
-    {"write", TOKEN_WRITE},
-    {"not", TOKEN_NOT},
-    {"of", TOKEN_OF},
-    {"or", TOKEN_OR}};
+const std::unordered_map<std::wstring, TokenCode> palavras_chave = {
+    {L"program", TOKEN_PROGRAM},
+    {L"label", TOKEN_LABEL},
+    {L"type", TOKEN_TYPE},
+    {L"array", TOKEN_ARRAY},
+    {L"var", TOKEN_VAR},
+    {L"procedure", TOKEN_PROCEDURE},
+    {L"function", TOKEN_FUNCTION},
+    {L"begin", TOKEN_BEGIN},
+    {L"end", TOKEN_END},
+    {L"if", TOKEN_IF},
+    {L"then", TOKEN_THEN},
+    {L"else", TOKEN_ELSE},
+    {L"while", TOKEN_WHILE},
+    {L"do", TOKEN_DO},
+    {L"div", TOKEN_DIV},
+    {L"and", TOKEN_AND},
+    {L"goto", TOKEN_GOTO},
+    {L"read", TOKEN_READ},
+    {L"write", TOKEN_WRITE},
+    {L"not", TOKEN_NOT},
+    {L"of", TOKEN_OF},
+    {L"or", TOKEN_OR}};
 
-token analisador_lexico(std::string::iterator &prox,
-                        const std::string::iterator &end) {
-  std::string atom;
+token analisador_lexico(std::wstring::iterator &prox,
+                        const std::wstring::iterator &end) {
+  std::wstring atom;
   std::locale loc("en_US.UTF8");
   for (; prox != end && *prox == ' '; prox++)
     ;
 
   if (prox == end)
-    return {"#", TOKEN_EOF};
+    return {L"#", TOKEN_EOF};
 
-  std::string s(1, *prox);
+  std::wstring s(1, *prox);
   if (simbolos_especiais.find(s) != simbolos_especiais.end()) {
     prox++;
-    if (s == ":" && *prox == '=') {
-      s = ":=";
+    if (s == L":" && *prox == '=') {
+      s = L":=";
       prox++;
-    } else if (s == "<" && *prox == '>') {
-      s = "<>";
+    } else if (s == L"<" && *prox == '>') {
+      s = L"<>";
       prox++;
-    } else if (s == "<" && *prox == '=') {
-      s = "<=";
+    } else if (s == L"<" && *prox == '=') {
+      s = L"<=";
       prox++;
-    } else if (s == ">" && *prox == '=') {
-      s = ">=";
+    } else if (s == L">" && *prox == '=') {
+      s = L">=";
       prox++;
-    } else if (s == "(" && *prox == '*') {
+    } else if (s == L"(" && *prox == '*') {
       prox++;
       while (prox != end) {
         if (*prox == '*' && (prox + 1) != end && *(prox + 1) == ')') {
@@ -174,7 +174,7 @@ token analisador_lexico(std::string::iterator &prox,
         }
         prox++;
       }
-      return {"Fechamento de comentario não identificado", TOKEN_ERROR};
+      return {L"Fechamento de comentario não identificado", TOKEN_ERROR};
     }
     return {s, simbolos_especiais.find(s)->second};
   }
@@ -192,33 +192,33 @@ token analisador_lexico(std::string::iterator &prox,
     while (prox != end && isdigit(*prox, loc))
       atom.push_back(*prox++);
     if (prox != end && isalpha(*prox, loc))
-      return {"Letra em meio de numero.", TOKEN_ERROR};
+      return {L"Letra em meio de numero.", TOKEN_ERROR};
     else
       return {atom, TOKEN_NUMBER};
   }
-  std::string error_msg = "Token inesperado: ";
+  std::wstring error_msg = L"Token inesperado: ";
   error_msg.push_back(*prox);
   return {error_msg, TOKEN_ERROR};
 }
 
-std::vector<token> getTokens(std::string source_code) {
+std::vector<token> getTokens(std::wstring source_code) {
   auto it = source_code.begin();
   std::vector<token> tokens;
 
   do {
     tokens.push_back(analisador_lexico(it, source_code.end()));
     if (tokens.back().code == TOKEN_ERROR) {
-      std::cerr << tokens.back().content << '\n';
+      std::wcerr << tokens.back().content << '\n';
       exit(1);
     }
   } while (tokens.back().code != TOKEN_EOF);
   return tokens;
 }
 
-std::string read_source_file() {
-  std::string buffer;
-  std::string source_code;
-  while (std::getline(std::cin, buffer))
+std::wstring read_source_file() {
+  std::wstring buffer;
+  std::wstring source_code;
+  while (std::getline(std::wcin, buffer))
     source_code += buffer;
 
   return source_code;
@@ -243,7 +243,8 @@ std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
 }
 
 int main() {
-  std::string source_code = read_source_file();
+  setlocale(LC_ALL, "");
+  std::wstring source_code = read_source_file();
   std::vector<token> tokens = getTokens(source_code);
 
   auto counts = countTokenTypes(tokens);
