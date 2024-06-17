@@ -28,6 +28,7 @@ enum TokenCode {
   TOKEN_NUMBER,     // 3 - (Number token)
   TOKEN_EOF,        // 4 - (Token for end of file)
   TOKEN_COMMENTS,   // 5 - (Token for comments)
+  TOKEN_UNKNOWN,    // 6 - (Unknown token)
 
   // Operadores OPERATOR:
   TOKEN_PLUS = 100, // 100 - +
@@ -94,6 +95,8 @@ TokenType getTokenType(TokenCode code) {
     return TOKENTYPE_NUMBER;
   if (code == TOKEN_COMMENTS)
     return TOKENTYPE_COMMENTS;
+  if (code == TOKEN_UNKNOWN)
+    return TOKENTYPE_UNKNOWN;
   if (code >= 400)
     return TOKENTYPE_KEYWORD;
   if (code >= 300 && code < 400)
@@ -112,7 +115,7 @@ const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
     {"-", TOKEN_MINUS},    {"*", TOKEN_STAR},        {"[", TOKEN_LBRACKET},
     {"]", TOKEN_RBRACKET}, {":=", TOKEN_ASSIGNMENT}, {"<=", TOKEN_LE},
     {">=", TOKEN_GE},      {"<>", TOKEN_NE},         {";", TOKEN_SEMICOLON},
-    {"/", TOKEN_SLASH},    {"\'", TOKEN_APOSTROPHE}, {"\"", TOKEN_QUOTES}};
+    {"/", TOKEN_SLASH}};
 
 const std::unordered_map<std::string, TokenCode> palavras_chave = {
     {"program", TOKEN_PROGRAM},
@@ -193,9 +196,8 @@ token analisador_lexico(std::string::iterator &prox,
     else
       return {atom, TOKEN_NUMBER};
   }
-  std::string error_msg = "Token inesperado: ";
-  error_msg.push_back(*prox);
-  return {error_msg, TOKEN_ERROR};
+  prox++;
+  return {s, TOKEN_UNKNOWN};
 }
 
 std::vector<token> getTokens(std::string source_code) {
