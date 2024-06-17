@@ -1,5 +1,7 @@
 #include <cctype>
+#include <clocale>
 #include <iostream>
+#include <locale>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -141,6 +143,7 @@ const std::unordered_map<std::string, TokenCode> palavras_chave = {
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end) {
   std::string atom;
+  std::locale loc("en_US.UTF8");
   for (; prox != end && *prox == ' '; prox++)
     ;
 
@@ -176,8 +179,8 @@ token analisador_lexico(std::string::iterator &prox,
     return {s, simbolos_especiais.find(s)->second};
   }
 
-  if (isalpha(*prox)) {
-    while (prox != end && (isalpha(*prox) || isdigit(*prox)))
+  if (std::isalpha(*prox, loc)) {
+    while (prox != end && (isalnum(*prox, loc)))
       atom.push_back(*prox++);
     if (palavras_chave.find(atom) != palavras_chave.end())
       return {atom, palavras_chave.find(atom)->second};
@@ -185,10 +188,10 @@ token analisador_lexico(std::string::iterator &prox,
       return {atom, TOKEN_IDENTIFIER};
   }
 
-  if (isdigit(*prox)) {
-    while (prox != end && isdigit(*prox))
+  if (isdigit(*prox, loc)) {
+    while (prox != end && isdigit(*prox, loc))
       atom.push_back(*prox++);
-    if (prox != end && isalpha(*prox))
+    if (prox != end && isalpha(*prox, loc))
       return {"Letra em meio de numero.", TOKEN_ERROR};
     else
       return {atom, TOKEN_NUMBER};
