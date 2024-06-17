@@ -7,7 +7,7 @@
 
 const std::vector<std::string> tokenTypeNames = {
         "KEYWORD", "IDENTIFIER", "NUMBER", "OPERATOR",
-        "COMPOUND_OPERATOR", "DELIMITER", "COMMENTS", "UNKNOWN"
+        "COMPOUND OPERATOR", "DELIMITER", "COMMENTS", "UNKNOWN"
 };
 
 enum TokenType {
@@ -67,15 +67,18 @@ enum TokenCode {
     TOKEN_GOTO,            // 408 - goto
     TOKEN_IF,              // 409 - if
     TOKEN_LABEL,           // 410 - label
-    TOKEN_PROCEDURE,       // 411 - procedure
-    TOKEN_PROGRAM,         // 412 - program
-    TOKEN_THEN,            // 413 - then
-    TOKEN_TYPE,            // 414 - type
-    TOKEN_VAR,             // 415 - var
-    TOKEN_WHILE,           // 416 - while
+    TOKEN_NOT,             // 411 - not
+    TOKEN_OF,              // 412 - of
+    TOKEN_OR,              // 413 - or
+    TOKEN_PROCEDURE,       // 414 - procedure
+    TOKEN_PROGRAM,         // 415 - program
+    TOKEN_THEN,            // 416 - then
+    TOKEN_TYPE,            // 417 - type
+    TOKEN_VAR,             // 418 - var
+    TOKEN_WHILE,           // 419 - while
 
-    TOKEN_READ,            // 417 - read
-    TOKEN_WRITE            // 418 - write
+    TOKEN_READ,            // 420 - read
+    TOKEN_WRITE            // 421 - write
 };
 
 struct token {
@@ -134,7 +137,11 @@ const std::unordered_map<std::string, TokenCode> palavras_chave = {
         {"and",       TOKEN_AND},
         {"goto",      TOKEN_GOTO},
         {"read",      TOKEN_READ},
-        {"write",     TOKEN_WRITE}};
+        {"write",     TOKEN_WRITE},
+        {"not",       TOKEN_NOT},
+        {"of",        TOKEN_OF},
+        {"or",        TOKEN_OR}};
+
 
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end) {
