@@ -178,12 +178,12 @@ token analisador_lexico(std::wstring::iterator &prox,
       while (temp != end) {
         if (*temp == '*' && (temp + 1) != end && *(temp + 1) == ')') {
           prox = temp + 2;
-          return {L"", TOKEN_COMMENTS};         // EXPLODE COMENTARIO
+          return {L"", TOKEN_COMMENTS}; // EXPLODE COMENTARIO
         }
         temp++;
       }
       prox--;
-      return {L"(*", TOKEN_RPAREN};
+      return {L"(*", TOKEN_LPARENTHESIS};
     }
     return {s, simbolos_especiais.find(s)->second};
   }
