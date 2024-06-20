@@ -31,31 +31,31 @@ enum TokenCode {
   TOKEN_UNKNOWN,    // 6 - (Unknown token)
 
   // Operadores OPERATOR:
-  TOKEN_PLUS = 100, // 100 - +
-  TOKEN_MINUS,      // 101 - -
-  TOKEN_STAR,       // 102 - *
-  TOKEN_SLASH,      // 103 - /
-  TOKEN_LT,         // 104 - <
-  TOKEN_GT,         // 105 - >
-  TOKEN_EQUAL,      // 106 - =
+  TOKEN_PLUS = 100,  // 100 - +
+  TOKEN_MINUS,       // 101 - -
+  TOKEN_ASTERISK,    // 102 - *
+  TOKEN_SLASH,       // 103 - /
+  TOKEN_LESSTHAN,    // 104 - <
+  TOKEN_GREATERTHAN, // 105 - >
+  TOKEN_EQUAL,       // 106 - =
 
   // Operadores compostos COMPOUND_OPERATOR:
   TOKEN_ASSIGNMENT = 200, // 200 - :=
-  TOKEN_LE,               // 201 - <=
-  TOKEN_GE,               // 202 - >=
-  TOKEN_NE,               // 203 - <>
+  TOKEN_LESSEQUAL,        // 201 - <=
+  TOKEN_GREATEREQUAL,     // 202 - >=
+  TOKEN_NOTEQUAL,         // 203 - <>
 
   // Delimitadores DELIMITER:
-  TOKEN_LPAREN = 300, // 300 - (
-  TOKEN_RPAREN,       // 301 - )
-  TOKEN_LBRACKET,     // 302 - [
-  TOKEN_RBRACKET,     // 303 - ]
-  TOKEN_SEMICOLON,    // 304 - ;
-  TOKEN_COMMA,        // 305 - ,
-  TOKEN_COLON,        // 306 - :
-  TOKEN_DOT,          // 307 - .
-  TOKEN_APOSTROPHE,   // 308 - '
-  TOKEN_QUOTES,       // 309 - "
+  TOKEN_LPARENTHESIS = 300, // 300 - (
+  TOKEN_RPARENTHESIS,       // 301 - )
+  TOKEN_LBRACKET,           // 302 - [
+  TOKEN_RBRACKET,           // 303 - ]
+  TOKEN_SEMICOLON,          // 304 - ;
+  TOKEN_COMMA,              // 305 - ,
+  TOKEN_COLON,              // 306 - :
+  TOKEN_PERIOD,             // 307 - .
+  TOKEN_APOSTROPHE,         // 308 - '
+  TOKEN_QUOTES,             // 309 - "
 
   // Palavras-chave KEYWORD:
   TOKEN_AND = 400, // 400 - and
@@ -109,12 +109,15 @@ TokenType getTokenType(TokenCode code) {
 }
 
 const std::unordered_map<std::wstring, TokenCode> simbolos_especiais = {
-    {L".", TOKEN_DOT},      {L":", TOKEN_COLON},       {L",", TOKEN_COMMA},
-    {L"(", TOKEN_LPAREN},   {L")", TOKEN_RPAREN},      {L"=", TOKEN_EQUAL},
-    {L"<", TOKEN_LT},       {L">", TOKEN_GT},          {L"+", TOKEN_PLUS},
-    {L"-", TOKEN_MINUS},    {L"*", TOKEN_STAR},        {L"[", TOKEN_LBRACKET},
-    {L"]", TOKEN_RBRACKET}, {L":=", TOKEN_ASSIGNMENT}, {L"<=", TOKEN_LE},
-    {L">=", TOKEN_GE},      {L"<>", TOKEN_NE},         {L";", TOKEN_SEMICOLON},
+    {L".", TOKEN_PERIOD},       {L":", TOKEN_COLON},
+    {L",", TOKEN_COMMA},        {L"(", TOKEN_LPARENTHESIS},
+    {L")", TOKEN_RPARENTHESIS}, {L"=", TOKEN_EQUAL},
+    {L"<", TOKEN_LESSTHAN},     {L">", TOKEN_GREATERTHAN},
+    {L"+", TOKEN_PLUS},         {L"-", TOKEN_MINUS},
+    {L"*", TOKEN_ASTERISK},     {L"[", TOKEN_LBRACKET},
+    {L"]", TOKEN_RBRACKET},     {L":=", TOKEN_ASSIGNMENT},
+    {L"<=", TOKEN_LESSEQUAL},   {L">=", TOKEN_GREATEREQUAL},
+    {L"<>", TOKEN_NOTEQUAL},    {L";", TOKEN_SEMICOLON},
     {L"/", TOKEN_SLASH}};
 
 const std::unordered_map<std::wstring, TokenCode> palavras_chave = {
