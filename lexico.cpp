@@ -28,12 +28,7 @@ enum TokenCode {
   TOKEN_NUMBER,     // 3 - (Number token)
   TOKEN_EOF,        // 4 - (Token for end of file)
   TOKEN_COMMENTS,   // 5 - (Token for comments)
-<<<<<<< HEAD
   TOKEN_UNKNOWN,    // 6 - (Unknown token)
-||||||| d4c841b
-=======
-  TOKEN_UNKNOWN,
->>>>>>> locales
 
   // Operadores OPERATOR:
   TOKEN_PLUS = 100, // 100 - +
@@ -113,25 +108,6 @@ TokenType getTokenType(TokenCode code) {
   return TOKENTYPE_UNKNOWN;
 }
 
-<<<<<<< HEAD
-const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
-    {".", TOKEN_DOT},      {":", TOKEN_COLON},       {",", TOKEN_COMMA},
-    {"(", TOKEN_LPAREN},   {")", TOKEN_RPAREN},      {"=", TOKEN_EQUAL},
-    {"<", TOKEN_LT},       {">", TOKEN_GT},          {"+", TOKEN_PLUS},
-    {"-", TOKEN_MINUS},    {"*", TOKEN_STAR},        {"[", TOKEN_LBRACKET},
-    {"]", TOKEN_RBRACKET}, {":=", TOKEN_ASSIGNMENT}, {"<=", TOKEN_LE},
-    {">=", TOKEN_GE},      {"<>", TOKEN_NE},         {";", TOKEN_SEMICOLON},
-    {"/", TOKEN_SLASH}};
-||||||| d4c841b
-const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
-    {".", TOKEN_DOT},      {":", TOKEN_COLON},       {",", TOKEN_COMMA},
-    {"(", TOKEN_LPAREN},   {")", TOKEN_RPAREN},      {"=", TOKEN_EQUAL},
-    {"<", TOKEN_LT},       {">", TOKEN_GT},          {"+", TOKEN_PLUS},
-    {"-", TOKEN_MINUS},    {"*", TOKEN_STAR},        {"[", TOKEN_LBRACKET},
-    {"]", TOKEN_RBRACKET}, {":=", TOKEN_ASSIGNMENT}, {"<=", TOKEN_LE},
-    {">=", TOKEN_GE},      {"<>", TOKEN_NE},         {";", TOKEN_SEMICOLON},
-    {"/", TOKEN_SLASH},    {"\'", TOKEN_APOSTROPHE}, {"\"", TOKEN_QUOTES}};
-=======
 const std::unordered_map<std::wstring, TokenCode> simbolos_especiais = {
     {L".", TOKEN_DOT},      {L":", TOKEN_COLON},       {L",", TOKEN_COMMA},
     {L"(", TOKEN_LPAREN},   {L")", TOKEN_RPAREN},      {L"=", TOKEN_EQUAL},
@@ -140,7 +116,6 @@ const std::unordered_map<std::wstring, TokenCode> simbolos_especiais = {
     {L"]", TOKEN_RBRACKET}, {L":=", TOKEN_ASSIGNMENT}, {L"<=", TOKEN_LE},
     {L">=", TOKEN_GE},      {L"<>", TOKEN_NE},         {L";", TOKEN_SEMICOLON},
     {L"/", TOKEN_SLASH}};
->>>>>>> locales
 
 const std::unordered_map<std::wstring, TokenCode> palavras_chave = {
     {L"program", TOKEN_PROGRAM},
@@ -166,21 +141,10 @@ const std::unordered_map<std::wstring, TokenCode> palavras_chave = {
     {L"of", TOKEN_OF},
     {L"or", TOKEN_OR}};
 
-<<<<<<< HEAD
-token analisador_lexico(std::string::iterator &prox,
-                        const std::string::iterator &end) {
-  std::string atom;
-||||||| d4c841b
-token analisador_lexico(std::string::iterator &prox,
-                        const std::string::iterator &end) {
-  std::string atom;
-  std::locale loc("en_US.UTF8");
-=======
 token analisador_lexico(std::wstring::iterator &prox,
                         const std::wstring::iterator &end) {
   std::wstring atom;
   std::locale loc("en_US.UTF8");
->>>>>>> locales
   for (; prox != end && *prox == ' '; prox++)
     ;
 
@@ -228,16 +192,8 @@ token analisador_lexico(std::wstring::iterator &prox,
   if (isdigit(*prox)) {
     while (prox != end && isdigit(*prox))
       atom.push_back(*prox++);
-<<<<<<< HEAD
-    if (prox != end && isalpha(*prox))
-      return {"Letra em meio de numero.", TOKEN_ERROR};
-||||||| d4c841b
-    if (prox != end && isalpha(*prox, loc))
-      return {"Letra em meio de numero.", TOKEN_ERROR};
-=======
     if (prox != end && isalpha(*prox, loc))
       return {L"Letra em meio de numero.", TOKEN_ERROR};
->>>>>>> locales
     else
       return {atom, TOKEN_NUMBER};
   }
