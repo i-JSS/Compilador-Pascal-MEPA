@@ -17,7 +17,8 @@ enum TokenType {
   TOKENTYPE_COMPOUND_OPERATOR,
   TOKENTYPE_DELIMITER,
   TOKENTYPE_COMMENTS,
-  TOKENTYPE_UNKNOWN
+  TOKENTYPE_UNKNOWN,
+  TOKENTYPE_ERROR
 };
 
 enum TokenCode {
@@ -97,6 +98,8 @@ TokenType getTokenType(TokenCode code) {
     return TOKENTYPE_COMMENTS;
   if (code == TOKEN_UNKNOWN)
     return TOKENTYPE_UNKNOWN;
+  if (code == TOKEN_ERROR)
+    return TOKENTYPE_ERROR;
   if (code >= 400)
     return TOKENTYPE_KEYWORD;
   if (code >= 300 && code < 400)
