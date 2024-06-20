@@ -174,14 +174,16 @@ token analisador_lexico(std::wstring::iterator &prox,
       prox++;
     } else if (s == L"(" && *prox == '*') {
       prox++;
-      while (prox != end) {
-        if (*prox == '*' && (prox + 1) != end && *(prox + 1) == ')') {
-          prox += 2;
-          return {atom, TOKEN_COMMENTS};
+      auto temp = prox;
+      while (temp != end) {
+        if (*temp == '*' && (temp + 1) != end && *(temp + 1) == ')') {
+          prox = temp + 2;
+          return {L"", TOKEN_COMMENTS};         // EXPLODE COMENTARIO
         }
-        prox++;
+        temp++;
       }
-      return {L"Fechamento de comentario não identificado", TOKEN_ERROR};
+      prox--;
+      return {L"(*", TOKEN_RPAREN};
     }
     return {s, simbolos_especiais.find(s)->second};
   }
@@ -199,7 +201,7 @@ token analisador_lexico(std::wstring::iterator &prox,
     while (prox != end && isdigit(*prox))
       atom.push_back(*prox++);
     if (prox != end && isalpha(*prox, loc))
-      return {L"Letra em meio de numero.", TOKEN_ERROR};
+      return {atom, TOKEN_UNKNOWN};
     else
       return {atom, TOKEN_NUMBER};
   }
