@@ -254,10 +254,11 @@ std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
 int main() {
   std::string source_code = read_source_file();
   std::vector<token> tokens = getTokens(source_code);
+#ifdef PRINT_TOKENS
   for (auto &token : tokens)
     std::cout << tokenTypeNames[getTokenType(token.code)] << "-"
-              << token.content << "\n"; // PRINT
-  //    LISTA
+              << token.content << "\n";
+#endif
   auto counts = countTokenTypes(tokens);
 
   for (auto &count : counts) {
