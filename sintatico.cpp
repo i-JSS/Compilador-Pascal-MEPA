@@ -620,8 +620,13 @@ void fator(std::vector<token>::iterator &current) {
     fator(current);
     break;
   case TOKEN_IDENTIFIER:
-    // TODO: COMO DIFERENCIAR FUNÇÃO DE VARIÁVEL??? sem função atualmente
-    variavel(current);
+    if (tabela_simbolos[current->content] == SYMBOLTYPE_VARIABLE)
+      variavel(current);
+    else if (tabela_simbolos[current->content] == SYMBOLTYPE_FUNCTION)
+      chamada_funcao(current);
+    else
+      rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
+              current->content);
     break;
   default:
     rejeito("ESPERADO NUMERO, PARENTESE, NOT OU IDENTIFICADOR, RECEBIDO " +
