@@ -424,6 +424,7 @@ void parte_declaracao_subrotinas(std::vector<token>::iterator &current) {
       declaracao_procedimento(current);
     else
       declaracao_funcao(current);
+    check_token(current, TOKEN_SEMICOLON);
   }
 }
 
