@@ -182,8 +182,7 @@ const std::unordered_map<std::string, TokenCode> palavras_chave = {
     {"div", TOKEN_DIV},
     {"and", TOKEN_AND},
     {"goto", TOKEN_GOTO},
-    {"read", TOKEN_READ},
-    {"write", TOKEN_WRITE},
+    // {"read", TOKEN_READ}, {"write", TOKEN_WRITE},
     {"not", TOKEN_NOT},
     {"of", TOKEN_OF},
     {"or", TOKEN_OR}};
@@ -359,17 +358,6 @@ std::vector<token> getTokens(std::string source_code) {
     }
   } while (tokens.back().code != TOKEN_EOF);
   return tokens;
-}
-
-void check_token(std::vector<token>::iterator &current,
-                 TokenCode expectedToken) {
-  if (current->code != expectedToken) {
-    std::string errorMsg =
-        "Expected token: " + inverseIndex.find(expectedToken)->second +
-        " where " + current->content + " found";
-    rejeito(errorMsg);
-  }
-  current++;
 }
 
 // -- ANÁLISE SINTÁTICA
@@ -652,6 +640,17 @@ void rejeito(std::string msg) {
   std::cout << "Rejeito\n";
   std::cerr << "Erro: " << msg << '\n';
   exit(0);
+}
+
+void check_token(std::vector<token>::iterator &current,
+                 TokenCode expectedToken) {
+  if (current->code != expectedToken) {
+    std::string errorMsg =
+        "Expected token: " + inverseIndex.find(expectedToken)->second +
+        " where " + current->content + " found";
+    rejeito(errorMsg);
+  }
+  current++;
 }
 
 bool isRelacao(TokenCode code) {
