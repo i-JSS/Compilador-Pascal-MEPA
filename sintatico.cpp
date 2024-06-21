@@ -149,6 +149,49 @@ const std::unordered_map<std::string, TokenCode> palavras_chave = {
     {"of", TOKEN_OF},
     {"or", TOKEN_OR}};
 
+const std::unordered_map<TokenCode, std::string> inverseIndex = {
+    {TOKEN_PERIOD, "."},
+    {TOKEN_COLON, ":"},
+    {TOKEN_COMMA, ","},
+    {TOKEN_LPARENTHESIS, "("},
+    {TOKEN_RPARENTHESIS, ")"},
+    {TOKEN_EQUAL, "="},
+    {TOKEN_LESSTHAN, "<"},
+    {TOKEN_GREATERTHAN, ">"},
+    {TOKEN_PLUS, "+"},
+    {TOKEN_MINUS, "-"},
+    {TOKEN_ASTERISK, "*"},
+    {TOKEN_LBRACKET, "["},
+    {TOKEN_RBRACKET, "]"},
+    {TOKEN_ASSIGNMENT, ":="},
+    {TOKEN_LESSEQUAL, "<="},
+    {TOKEN_GREATEREQUAL, ">="},
+    {TOKEN_NOTEQUAL, "<>"},
+    {TOKEN_SEMICOLON, ";"},
+    {TOKEN_SLASH, "/"},
+    {TOKEN_PROGRAM, "program"},
+    {TOKEN_LABEL, "label"},
+    {TOKEN_TYPE, "type"},
+    {TOKEN_ARRAY, "array"},
+    {TOKEN_VAR, "var"},
+    {TOKEN_PROCEDURE, "procedure"},
+    {TOKEN_FUNCTION, "function"},
+    {TOKEN_BEGIN, "begin"},
+    {TOKEN_END, "end"},
+    {TOKEN_IF, "if"},
+    {TOKEN_THEN, "then"},
+    {TOKEN_ELSE, "else"},
+    {TOKEN_WHILE, "while"},
+    {TOKEN_DO, "do"},
+    {TOKEN_DIV, "div"},
+    {TOKEN_AND, "and"},
+    {TOKEN_GOTO, "goto"},
+    {TOKEN_READ, "read"},
+    {TOKEN_WRITE, "write"},
+    {TOKEN_NOT, "not"},
+    {TOKEN_OF, "of"},
+    {TOKEN_OR, "or"}};
+
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end) {
   std::string atom;
@@ -264,6 +307,27 @@ std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
   return counts;
 }
 
+void rejeito(std::string msg) {
+  std::cout << "Rejeito\n";
+  std::cerr << "Erro: " << msg << '\n';
+  exit(0);
+}
+
+void check_token(std::vector<token>::iterator &current,
+                 TokenCode expectedToken) {
+  if (current->code != expectedToken) {
+    std::string errorMsg =
+        "Expected token: " + inverseIndex.find(current->code)->second +
+        " where " + current->content + "found";
+    rejeito(errorMsg);
+  }
+  current++;
+}
+
+void program(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_PROGRAM);
+}
+
 int main(int argc, char *argv[]) {
   // argumento 0 é a própia chamada do executável
   std::string file_path(argv[1]);
@@ -274,11 +338,8 @@ int main(int argc, char *argv[]) {
     std::cout << tokenTypeNames[getTokenType(token.code)] << "-"
               << token.content << "\n";
 #endif
-  auto counts = countTokenTypes(tokens);
-
-  for (auto &count : counts) {
-    std::string name = tokenTypeNames[count.first];
-    std::cout << name << ": " << count.second << "\n";
-  }
+  auto it = tokens.begin();
+  program(it);
+  std::cout << "Aceito\n";
   return 0;
 }
