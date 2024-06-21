@@ -25,6 +25,7 @@ enum SymbolType {
   SYMBOLTYPE_VARIABLE,
   SYMBOLTYPE_FUNCTION,
   SYMBOLTYPE_PROCEDURE,
+  SYMBOLTYPE_TYPE,
 };
 
 enum TokenCode {
@@ -159,7 +160,7 @@ const std::vector<std::string> tokenTypeNames = {
     "COMPOUND OPERATOR", "DELIMITER",  "COMMENTS", "UNKNOWN"};
 
 const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
-                                                  "PROCEDURE"};
+                                                  "PROCEDURE", "TYPE"};
 const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
     {".", TOKEN_PERIOD},       {":", TOKEN_COLON},
     {",", TOKEN_COMMA},        {"(", TOKEN_LPARENTHESIS},
@@ -418,8 +419,10 @@ void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_VAR);
   declaracao_variaveis(current);
   while (current->code == TOKEN_SEMICOLON &&
-         (current + 1)->code == TOKEN_IDENTIFIER)
-    current += 2;
+         (current + 1)->code == TOKEN_IDENTIFIER) {
+    current++;
+    declaracao_variaveis(current);
+  }
   check_token(current, TOKEN_SEMICOLON);
 }
 
@@ -454,7 +457,7 @@ void declaracao_procedimento(std::vector<token>::iterator &current) {
 }
 
 void declaracao_funcao(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_PROCEDURE);
+  check_token(current, TOKEN_FUNCTION);
   check_token(current, TOKEN_IDENTIFIER);
   tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_FUNCTION;
   parametros_formais(current);
@@ -466,8 +469,7 @@ void declaracao_funcao(std::vector<token>::iterator &current) {
 
 void parametros_formais(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_LPARENTHESIS);
-  if (current->code == TOKEN_VAR)
-    secao_parametros_formais(current);
+  secao_parametros_formais(current);
   while (current->code == TOKEN_SEMICOLON) {
     current++;
     secao_parametros_formais(current);
@@ -476,10 +478,12 @@ void parametros_formais(std::vector<token>::iterator &current) {
 }
 
 void secao_parametros_formais(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_VAR);
+  if (current->code == TOKEN_VAR)
+    check_token(current, TOKEN_VAR);
   lista_identificadores(current);
   check_token(current, TOKEN_COLON);
   check_token(current, TOKEN_IDENTIFIER);
+  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_TYPE;
 }
 
 void comando_composto(std::vector<token>::iterator &current) {
@@ -645,6 +649,7 @@ void chamada_funcao(std::vector<token>::iterator &current) {
   if (current->code == TOKEN_LPARENTHESIS) {
     current++;
     lista_expressoes(current);
+    check_token(current, TOKEN_RPARENTHESIS);
   }
 }
 
