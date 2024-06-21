@@ -204,8 +204,8 @@ token analisador_lexico(std::string::iterator &prox,
 
   if (isdigit(*prox)) {
     bool rational_part = false;
-    while (prox != end &&
-           (isdigit(*prox) || (*prox == '.' && !rational_part))) {
+    while (prox != end && (isdigit(*prox) || (*prox == '.' && !rational_part &&
+                                              isdigit(*(prox + 1))))) {
       if (*prox == '.')
         rational_part = true;
       atom.push_back(*prox++);
