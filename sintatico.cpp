@@ -401,6 +401,7 @@ void parte_declaraco_rotulos(std::vector<token>::iterator &current) {
     current++;
     check_token(current, TOKEN_NUMBER);
   }
+  check_token(current, TOKEN_SEMICOLON);
 }
 
 void tipo(std::vector<token>::iterator &current) {
