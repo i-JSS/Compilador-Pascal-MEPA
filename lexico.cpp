@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   std::string file_path(argv[1]);
   std::string source_code = read_source_file(file_path);
   std::vector<token> tokens = getTokens(source_code);
-#ifdef PRINT_TOKENS
+#ifdef DEBUG
   for (auto &token : tokens)
     std::cout << tokenTypeNames[getTokenType(token.code)] << "-"
               << token.content << "\n";
