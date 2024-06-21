@@ -175,8 +175,15 @@ token analisador_lexico(std::string::iterator &prox,
       s = "(*";
       prox++;
       auto temp = prox;
+      int depth = 1;
       while (temp != end) {
         if ((temp + 1) != end && *temp == '*' && *(temp + 1) == ')') {
+          depth--;
+        }
+        if ((temp + 1) != end && *temp == '(' && *(temp + 1) == '*') {
+          depth++;
+        }
+        if (depth == 0) {
           prox = temp + 2;
           return {s + "*)", TOKEN_COMMENTS}; // EXPLODE COMENTARIO
         }
@@ -203,6 +210,8 @@ token analisador_lexico(std::string::iterator &prox,
   if (isdigit(*prox)) {
     while (prox != end && isdigit(*prox))
       atom.push_back(*prox++);
+    if (isalpha(*prox))
+      return {atom + *prox++, TOKEN_UNKNOWN};
     return {atom, TOKEN_NUMBER};
   }
 
@@ -254,9 +263,9 @@ std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
 int main() {
   std::string source_code = read_source_file();
   std::vector<token> tokens = getTokens(source_code);
-  for (auto &token : tokens)
-    std::cout << tokenTypeNames[getTokenType(token.code)] << "-"
-              << token.content << "\n"; // PRINT
+  // for (auto &token : tokens)
+  //   std::cout << tokenTypeNames[getTokenType(token.code)] << "-"
+  //             << token.content << "\n"; // PRINT
   //    LISTA
   auto counts = countTokenTypes(tokens);
 
