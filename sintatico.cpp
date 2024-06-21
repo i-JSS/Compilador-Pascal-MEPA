@@ -397,31 +397,33 @@ void tipo(std::vector<token>::iterator &current) {
 
 void declaracao_variaveis(std::vector<token>::iterator &current) {
   lista_identificadores(current);
+  check_token(current, TOKEN_COLON);
   tipo(current);
 }
 
 void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_VAR);
   declaracao_variaveis(current);
-  while (current->code == TOKEN_SEMICOLON) {
-    current++;
-    declaracao_variaveis(current);
-  }
+  while (current->code == TOKEN_SEMICOLON &&
+         (current + 1)->code == TOKEN_IDENTIFIER)
+    current += 2;
   check_token(current, TOKEN_SEMICOLON);
 }
 
 void lista_identificadores(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_IDENTIFIER);
   while (current->code == TOKEN_COMMA) {
-    check_token(current, TOKEN_COMMA);
+    current++;
     check_token(current, TOKEN_IDENTIFIER);
   }
 }
 
 void parte_declaracao_subrotinas(std::vector<token>::iterator &current) {
   while (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION) {
-    current++;
-    check_token(current, TOKEN_SEMICOLON);
+    if (current->code == TOKEN_PROCEDURE)
+      declaracao_procedimento(current);
+    else
+      declaracao_funcao(current);
   }
 }
 
@@ -648,7 +650,14 @@ void check_token(std::vector<token>::iterator &current,
     std::string errorMsg =
         "Expected token: " + inverseIndex.find(expectedToken)->second +
         " where " + current->content + " found";
-    rejeito(errorMsg);
+    std::string tokenDump;
+    int i = 0;
+    while (current->code != TOKEN_EOF && i < 5) {
+      tokenDump += current->content + ", ";
+      i++;
+      current++;
+    }
+    rejeito(errorMsg + " - TOKEN DUMP: [" + tokenDump + "]");
   }
   current++;
 }
