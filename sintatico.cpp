@@ -488,8 +488,11 @@ void comando_sem_rotulo(std::vector<token>::iterator &current) {
   case TOKEN_IF:
     comando_condicional(current);
     break;
-  case TOKEN_BEGIN:
+  case TOKEN_WHILE:
     comando_repetitivo(current);
+    break;
+  case TOKEN_BEGIN:
+    comando_composto(current);
     break;
   case TOKEN_GOTO:
     desvio(current);
