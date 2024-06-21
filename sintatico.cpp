@@ -21,6 +21,12 @@ enum TokenType {
   TOKENTYPE_ERROR
 };
 
+enum SymbolType {
+  SYMBOLTYPE_VARIABLE,
+  SYMBOLTYPE_FUNCTION,
+  SYMBOLTYPE_PROCEDURE,
+};
+
 enum TokenCode {
   // Tokens especiais:
   TOKEN_EMPTY = 0,  // 0 - (Empty token)
@@ -152,6 +158,8 @@ const std::vector<std::string> tokenTypeNames = {
     "KEYWORD",           "IDENTIFIER", "NUMBER",   "OPERATOR",
     "COMPOUND OPERATOR", "DELIMITER",  "COMMENTS", "UNKNOWN"};
 
+const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
+                                                  "PROCEDURE"};
 const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
     {".", TOKEN_PERIOD},       {":", TOKEN_COLON},
     {",", TOKEN_COMMA},        {"(", TOKEN_LPARENTHESIS},
@@ -361,6 +369,10 @@ std::vector<token> getTokens(std::string source_code) {
 }
 
 // -- ANÁLISE SINTÁTICA
+
+// Tabela de símbolos
+std::unordered_map<std::string, SymbolType> tabela_simbolos;
+
 void programa(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_PROGRAM);
   check_token(current, TOKEN_IDENTIFIER);
@@ -412,9 +424,11 @@ void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
 
 void lista_identificadores(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_IDENTIFIER);
+  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_VARIABLE;
   while (current->code == TOKEN_COMMA) {
     current++;
     check_token(current, TOKEN_IDENTIFIER);
+    tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_VARIABLE;
   }
 }
 
@@ -431,6 +445,7 @@ void parte_declaracao_subrotinas(std::vector<token>::iterator &current) {
 void declaracao_procedimento(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_PROCEDURE);
   check_token(current, TOKEN_IDENTIFIER);
+  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_PROCEDURE;
   if (current->code == TOKEN_LPARENTHESIS)
     parametros_formais(current);
   check_token(current, TOKEN_SEMICOLON);
@@ -440,6 +455,7 @@ void declaracao_procedimento(std::vector<token>::iterator &current) {
 void declaracao_funcao(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_PROCEDURE);
   check_token(current, TOKEN_IDENTIFIER);
+  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_FUNCTION;
   parametros_formais(current);
   check_token(current, TOKEN_COLON);
   check_token(current, TOKEN_IDENTIFIER);
@@ -677,13 +693,17 @@ int main(int argc, char *argv[]) {
   std::string file_path(argv[1]);
   std::string source_code = read_source_file(file_path);
   std::vector<token> tokens = getTokens(source_code);
+  auto it = tokens.begin();
+  programa(it);
 #ifdef DEBUG
+  std::cout << "tokens:\n";
   for (auto &token : tokens)
     std::cout << tokenTypeNames[getTokenType(token.code)] << "-"
               << token.content << "\n";
+  std::cout << "simbolos:\n";
+  for (auto &[nome, tipo] : tabela_simbolos)
+    std::cout << nome << " - " << symbolTypeNames[tipo] << '\n';
 #endif
-  auto it = tokens.begin();
-  programa(it);
   std::cout << "Aceito\n";
   return 0;
 }
