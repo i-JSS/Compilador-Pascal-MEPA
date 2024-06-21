@@ -7,9 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-const std::vector<std::string> tokenTypeNames = {
-    "KEYWORD",           "IDENTIFIER", "NUMBER",   "OPERATOR",
-    "COMPOUND OPERATOR", "DELIMITER",  "COMMENTS", "UNKNOWN"};
+// -- DEFINIÇõES --
 
 enum TokenType {
   TOKENTYPE_KEYWORD,
@@ -91,30 +89,68 @@ struct token {
   TokenCode code;
 };
 
-TokenType getTokenType(TokenCode code) {
-  if (code == TOKEN_IDENTIFIER)
-    return TOKENTYPE_IDENTIFIER;
-  if (code == TOKEN_NUMBER)
-    return TOKENTYPE_NUMBER;
-  if (code == TOKEN_COMMENTS)
-    return TOKENTYPE_COMMENTS;
-  if (code == TOKEN_UNKNOWN)
-    return TOKENTYPE_UNKNOWN;
-  if (code == TOKEN_ERROR)
-    return TOKENTYPE_ERROR;
-  if (code >= 400)
-    return TOKENTYPE_KEYWORD;
-  if (code >= 300 && code < 400)
-    return TOKENTYPE_DELIMITER;
-  if (code >= 200 && code < 300)
-    return TOKENTYPE_COMPOUND_OPERATOR;
-  if (code >= 100 && code < 200)
-    return TOKENTYPE_OPERATOR;
-  return TOKENTYPE_UNKNOWN;
-}
+// -- PROTÓTIPOS DE FUNÇÃO --
 
-void comando_composto(std::vector<token>::iterator &current);
+// -- ANÁLISE SINTÁTICA
+// -- PROGRAMAS E BLOCOS
+void programa(std::vector<token>::iterator &current);
 void bloco(std::vector<token>::iterator &current);
+
+// -- DECLARAÇOES
+void parte_declaraco_rotulos(std::vector<token>::iterator &current);
+// parte_definições_tipos
+// definicao_tipo
+void tipo(std::vector<token>::iterator &current);
+// indice
+void parte_declaraco_variaveis(std::vector<token>::iterator &current);
+void declaracao_variaveis(std::vector<token>::iterator &current);
+void lista_identificadores(std::vector<token>::iterator &current);
+void parte_declaracao_subrotinas(std::vector<token>::iterator &current);
+void declaracao_procedimento(std::vector<token>::iterator &current);
+void declaracao_funcao(std::vector<token>::iterator &current);
+void parametros_formais(std::vector<token>::iterator &current);
+void secao_parametros_formais(std::vector<token>::iterator &current);
+
+// -- COMANDOS
+void comando_composto(std::vector<token>::iterator &current);
+void comando(std::vector<token>::iterator &current);
+void comando_sem_rotulo(std::vector<token>::iterator &current);
+void atribuicao(std::vector<token>::iterator &current);
+void chamada_procedimento(std::vector<token>::iterator &current);
+void desvio(std::vector<token>::iterator &current);
+void comando_condicional(std::vector<token>::iterator &current);
+void comando_repetitivo(std::vector<token>::iterator &current);
+
+// -- EXPRESSÕES (Pode ser feita com análise de precedencia de operadores)
+void lista_expressoes(std::vector<token>::iterator &current);
+void expressao(std::vector<token>::iterator &current);
+void relacao(std::vector<token>::iterator &current);
+void expressao_simples(std::vector<token>::iterator &current);
+void termo(std::vector<token>::iterator &current);
+void fator(std::vector<token>::iterator &current);
+void variavel(std::vector<token>::iterator &current);
+void chamada_funcao(std::vector<token>::iterator &current);
+
+// -- UTILIDADE SINTATICA
+void check_token(std::vector<token>::iterator &current,
+                 TokenCode expectedToken);
+void rejeito(std::string msg);
+
+// -- ANÁLISE LÉXICA
+TokenType getTokenType(TokenCode code);
+token analisador_lexico(std::string::iterator &prox,
+                        const std::string::iterator &end);
+std::vector<token> getTokens(std::string source_code);
+std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens);
+
+// -- FUNÇÕES DE UTILIDADE
+std::string read_source_file(std::string file_path);
+
+// -- CONSTANTES --
+const std::vector<std::string> tokenTypeNames = {
+    "KEYWORD",           "IDENTIFIER", "NUMBER",   "OPERATOR",
+    "COMPOUND OPERATOR", "DELIMITER",  "COMMENTS", "UNKNOWN"};
+
 const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
     {".", TOKEN_PERIOD},       {":", TOKEN_COLON},
     {",", TOKEN_COMMA},        {"(", TOKEN_LPARENTHESIS},
@@ -196,6 +232,52 @@ const std::unordered_map<TokenCode, std::string> inverseIndex = {
     {TOKEN_IDENTIFIER, "IDENTIFIER"},
     {TOKEN_NUMBER, "NUMBER"}};
 
+// -- ANÁLISE LÉXICA --
+
+// -- CONTAGEM DE TIPOS DE TOKEN (DEPRECATED)
+[[deprecated("Não é necessário para questão de análise sintática")]]
+TokenType getTokenType(TokenCode code) {
+  if (code == TOKEN_IDENTIFIER)
+    return TOKENTYPE_IDENTIFIER;
+  if (code == TOKEN_NUMBER)
+    return TOKENTYPE_NUMBER;
+  if (code == TOKEN_COMMENTS)
+    return TOKENTYPE_COMMENTS;
+  if (code == TOKEN_UNKNOWN)
+    return TOKENTYPE_UNKNOWN;
+  if (code == TOKEN_ERROR)
+    return TOKENTYPE_ERROR;
+  if (code >= 400)
+    return TOKENTYPE_KEYWORD;
+  if (code >= 300 && code < 400)
+    return TOKENTYPE_DELIMITER;
+  if (code >= 200 && code < 300)
+    return TOKENTYPE_COMPOUND_OPERATOR;
+  if (code >= 100 && code < 200)
+    return TOKENTYPE_OPERATOR;
+  return TOKENTYPE_UNKNOWN;
+}
+
+[[deprecated("Não é necessário para questão de análise sintática")]]
+std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
+  std::map<TokenType, int> counts = {{TOKENTYPE_KEYWORD, 0},
+                                     {TOKENTYPE_IDENTIFIER, 0},
+                                     {TOKENTYPE_NUMBER, 0},
+                                     {TOKENTYPE_OPERATOR, 0},
+                                     {TOKENTYPE_COMPOUND_OPERATOR, 0},
+                                     {TOKENTYPE_DELIMITER, 0},
+                                     {TOKENTYPE_COMMENTS, 0},
+                                     {TOKENTYPE_UNKNOWN, 0}};
+  for (const token &t : tokens) {
+    TokenType type = getTokenType(t.code);
+    counts[type]++;
+  }
+  // TIRA O EOF DA CONTAGEM
+  counts[TOKENTYPE_UNKNOWN]--;
+  return counts;
+}
+
+// -- ANÁLISE PROPIAMENTE DITA
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end) {
   std::string atom;
@@ -278,45 +360,6 @@ std::vector<token> getTokens(std::string source_code) {
   return tokens;
 }
 
-std::string read_source_file(std::string file_path) {
-  std::ifstream file(file_path);
-  if (!file.is_open()) {
-    std::cerr << "Erro awo abrir arquivo: " << file_path << std::endl;
-    exit(1);
-  }
-  std::string buffer;
-  std::string source_code;
-  while (std::getline(file, buffer))
-    source_code += buffer + '\n';
-
-  file.close();
-  return source_code;
-}
-
-std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
-  std::map<TokenType, int> counts = {{TOKENTYPE_KEYWORD, 0},
-                                     {TOKENTYPE_IDENTIFIER, 0},
-                                     {TOKENTYPE_NUMBER, 0},
-                                     {TOKENTYPE_OPERATOR, 0},
-                                     {TOKENTYPE_COMPOUND_OPERATOR, 0},
-                                     {TOKENTYPE_DELIMITER, 0},
-                                     {TOKENTYPE_COMMENTS, 0},
-                                     {TOKENTYPE_UNKNOWN, 0}};
-  for (const token &t : tokens) {
-    TokenType type = getTokenType(t.code);
-    counts[type]++;
-  }
-  // TIRA O EOF DA CONTAGEM
-  counts[TOKENTYPE_UNKNOWN]--;
-  return counts;
-}
-
-void rejeito(std::string msg) {
-  std::cout << "Rejeito\n";
-  std::cerr << "Erro: " << msg << '\n';
-  exit(0);
-}
-
 void check_token(std::vector<token>::iterator &current,
                  TokenCode expectedToken) {
   if (current->code != expectedToken) {
@@ -328,25 +371,39 @@ void check_token(std::vector<token>::iterator &current,
   current++;
 }
 
-void lista_identificadores(std::vector<token>::iterator &current) {
+// -- ANÁLISE SINTÁTICA
+void programa(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_PROGRAM);
   check_token(current, TOKEN_IDENTIFIER);
-  while (current->code == TOKEN_COMMA) {
-    check_token(current, TOKEN_COMMA);
-    check_token(current, TOKEN_IDENTIFIER);
-  }
+  check_token(current, TOKEN_LPARENTHESIS);
+  lista_identificadores(current);
+  check_token(current, TOKEN_RPARENTHESIS);
+  check_token(current, TOKEN_SEMICOLON);
+  bloco(current);
+  check_token(current, TOKEN_PERIOD);
 }
 
-void tipo(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_IDENTIFIER);
+void bloco(std::vector<token>::iterator &current) {
+  if (current->code == TOKEN_LABEL)
+    parte_declaraco_rotulos(current);
+  if (current->code == TOKEN_VAR)
+    parte_declaraco_variaveis(current);
+  if (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION)
+    parte_declaracao_subrotinas(current);
+  comando_composto(current);
 }
 
-void declaraco_rotulos(std::vector<token>::iterator &current) {
+void parte_declaraco_rotulos(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_LABEL);
   check_token(current, TOKEN_NUMBER);
   while (current->code == TOKEN_COMMA) {
     current++;
     check_token(current, TOKEN_NUMBER);
   }
+}
+
+void tipo(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_IDENTIFIER);
 }
 
 void declaracao_variaveis(std::vector<token>::iterator &current) {
@@ -364,14 +421,40 @@ void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_SEMICOLON);
 }
 
-void secao_parametros_formais(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_VAR);
-  lista_identificadores(current);
-  check_token(current, TOKEN_COLON);
+void lista_identificadores(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_IDENTIFIER);
+  while (current->code == TOKEN_COMMA) {
+    check_token(current, TOKEN_COMMA);
+    check_token(current, TOKEN_IDENTIFIER);
+  }
 }
 
-// Talvez não seja opcional sempre
+void parte_declaracao_subrotinas(std::vector<token>::iterator &current) {
+  while (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION) {
+    current++;
+    check_token(current, TOKEN_SEMICOLON);
+  }
+}
+
+void declaracao_procedimento(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_PROCEDURE);
+  check_token(current, TOKEN_IDENTIFIER);
+  if (current->code == TOKEN_LPARENTHESIS)
+    parametros_formais(current);
+  check_token(current, TOKEN_SEMICOLON);
+  bloco(current);
+}
+
+void declaracao_funcao(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_PROCEDURE);
+  check_token(current, TOKEN_IDENTIFIER);
+  parametros_formais(current);
+  check_token(current, TOKEN_COLON);
+  check_token(current, TOKEN_IDENTIFIER);
+  check_token(current, TOKEN_SEMICOLON);
+  bloco(current);
+}
+
 void parametros_formais(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_LPARENTHESIS);
   if (current->code == TOKEN_VAR)
@@ -383,55 +466,11 @@ void parametros_formais(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_RPARENTHESIS);
 }
 
-void declaracao_de_procedimento(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_PROCEDURE);
-  check_token(current, TOKEN_IDENTIFIER);
-  if (current->code == TOKEN_LPARENTHESIS)
-    parametros_formais(current);
-  check_token(current, TOKEN_SEMICOLON);
-  bloco(current);
-}
-
-void declaracao_de_funcao(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_PROCEDURE);
-  check_token(current, TOKEN_IDENTIFIER);
-  parametros_formais(current);
+void secao_parametros_formais(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_VAR);
+  lista_identificadores(current);
   check_token(current, TOKEN_COLON);
   check_token(current, TOKEN_IDENTIFIER);
-  check_token(current, TOKEN_SEMICOLON);
-  bloco(current);
-}
-
-void parte_declaraco_subrotinas(std::vector<token>::iterator &current) {
-  while (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION) {
-    current++;
-    check_token(current, TOKEN_SEMICOLON);
-  }
-}
-
-void comando_sem_rotulo(std::vector<token>::iterator &current) {
-  if (current->code == TOKEN_IF)
-    comando_condicional(current);
-  else if (current->code == TOKEN_WHILE)
-    comando_repetitivo(current);
-  else if (current->code == TOKEN_BEGIN)
-    comando_composto(current);
-  else if (current->code == TOKEN_GOTO)
-    desvio(current);
-  else if (current->code == TOKEN_IDENTIFIER) {
-    // COMO DECIDIR PROCEDIMENTO OU ATRIBUIÇÂO AQUI?
-    // 1 LOOKAHEAD => 2 IDENTIFICADORES
-  }
-  rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR. RECEBIDO: " +
-          current->content);
-}
-
-void comando(std::vector<token>::iterator &current) {
-  if (current->code == TOKEN_NUMBER) {
-    check_token(current, TOKEN_NUMBER);
-    check_token(current, TOKEN_COLON);
-  }
-  comando_sem_rotulo(current);
 }
 
 void comando_composto(std::vector<token>::iterator &current) {
@@ -444,25 +483,66 @@ void comando_composto(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_END);
 }
 
-void bloco(std::vector<token>::iterator &current) {
-  if (current->code == TOKEN_LABEL)
-    declaraco_rotulos(current);
-  if (current->code == TOKEN_VAR)
-    parte_declaraco_variaveis(current);
-  if (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION)
-    parte_declaraco_subrotinas(current);
-  comando_composto(current);
+void comando(std::vector<token>::iterator &current) {
+  if (current->code == TOKEN_NUMBER) {
+    check_token(current, TOKEN_NUMBER);
+    check_token(current, TOKEN_COLON);
+  }
+  comando_sem_rotulo(current);
 }
 
-void programa(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_PROGRAM);
+void comando_sem_rotulo(std::vector<token>::iterator &current) {
+  switch (current->code) {
+  case TOKEN_IF:
+    comando_condicional(current);
+    break;
+  case TOKEN_BEGIN:
+    comando_repetitivo(current);
+    break;
+  case TOKEN_GOTO:
+    desvio(current);
+    break;
+  case TOKEN_IDENTIFIER:
+    switch ((current + 1)->code) {
+    case TOKEN_ASSIGNMENT:
+      atribuicao(current);
+      break;
+    default:
+      chamada_procedimento(current);
+      break;
+    }
+    break;
+  default:
+    rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR RECEBIDO: " +
+            current->content);
+    break;
+  }
+}
+
+void variavel(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_IDENTIFIER);
-  check_token(current, TOKEN_LPARENTHESIS);
-  lista_identificadores(current);
-  check_token(current, TOKEN_RPARENTHESIS);
-  check_token(current, TOKEN_SEMICOLON);
-  bloco(current);
-  check_token(current, TOKEN_PERIOD);
+}
+
+// -- FUNÇÕES DE UTILIDADE --
+std::string read_source_file(std::string file_path) {
+  std::ifstream file(file_path);
+  if (!file.is_open()) {
+    std::cerr << "Erro awo abrir arquivo: " << file_path << std::endl;
+    exit(1);
+  }
+  std::string buffer;
+  std::string source_code;
+  while (std::getline(file, buffer))
+    source_code += buffer + '\n';
+
+  file.close();
+  return source_code;
+}
+
+void rejeito(std::string msg) {
+  std::cout << "Rejeito\n";
+  std::cerr << "Erro: " << msg << '\n';
+  exit(0);
 }
 
 int main(int argc, char *argv[]) {
