@@ -150,8 +150,8 @@ const std::unordered_map<std::string, TokenCode> palavras_chave = {
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end) {
   std::string atom;
-  for (; prox != end && *prox == ' '; prox++)
-    ;
+  while (prox != end && isspace(*prox))
+    prox++;
 
   if (prox == end)
     return {"#", TOKEN_EOF};
@@ -226,7 +226,7 @@ std::string read_source_file() {
   std::string buffer;
   std::string source_code;
   while (std::getline(std::cin, buffer))
-    source_code += buffer;
+    source_code += buffer + '\n';
 
   return source_code;
 }
