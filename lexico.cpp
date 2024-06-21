@@ -172,13 +172,15 @@ token analisador_lexico(std::string::iterator &prox,
       s = ">=";
       prox++;
     } else if (s == "(" && *prox == '*') {
+      s = "(*";
       prox++;
       auto temp = prox;
       while (temp != end) {
-        if (*temp == '*' && (temp + 1) != end && *(temp + 1) == ')') {
+        if ((temp + 1) != end && *temp == '*' && *(temp + 1) == ')') {
           prox = temp + 2;
-          return {"", TOKEN_COMMENTS}; // EXPLODE COMENTARIO
+          return {s + "*)", TOKEN_COMMENTS}; // EXPLODE COMENTARIO
         }
+        s.push_back(*temp);
         temp++;
       }
       prox--;
