@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#define TOKENS_TO_DUMP 10
 
 // -- DEFINIÇõES --
 
@@ -153,6 +154,7 @@ std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens);
 
 // -- FUNÇÕES DE UTILIDADE
 std::string read_source_file(std::string file_path);
+void printTokenDump(std::vector<token>::iterator &current);
 
 // -- CONSTANTES --
 const std::vector<std::string> tokenTypeNames = {
@@ -364,7 +366,8 @@ std::vector<token> getTokens(std::string source_code) {
     if (tokens.back().code == TOKEN_ERROR) {
       std::cerr << tokens.back().content << '\n';
       exit(1);
-    }
+    } else if (tokens.back().code == TOKEN_COMMENTS)
+      tokens.pop_back();
   } while (tokens.back().code != TOKEN_EOF);
   return tokens;
 }
@@ -529,6 +532,7 @@ void comando_sem_rotulo(std::vector<token>::iterator &current) {
     }
     break;
   default:
+    printTokenDump(current);
     rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR RECEBIDO: " +
             current->content);
     break;
@@ -630,10 +634,12 @@ void fator(std::vector<token>::iterator &current) {
     else if (tabela_simbolos[current->content] == SYMBOLTYPE_FUNCTION)
       chamada_funcao(current);
     else
+
       rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
               current->content);
     break;
   default:
+    printTokenDump(current);
     rejeito("ESPERADO NUMERO, PARENTESE, NOT OU IDENTIFICADOR, RECEBIDO " +
             current->content);
     break;
@@ -674,6 +680,17 @@ void rejeito(std::string msg) {
   std::cerr << "Erro: " << msg << '\n';
   exit(0);
 }
+void printTokenDump(std::vector<token>::iterator &current) {
+  auto temp = current;
+  std::string tokenDump;
+  int i = 0;
+  while (temp->code != TOKEN_EOF && i < TOKENS_TO_DUMP) {
+    tokenDump += temp->content + ", ";
+    i++;
+    temp++;
+  }
+  std::cout << "TOKEN DUMP: " << tokenDump << "\n";
+}
 
 void check_token(std::vector<token>::iterator &current,
                  TokenCode expectedToken) {
@@ -681,14 +698,8 @@ void check_token(std::vector<token>::iterator &current,
     std::string errorMsg =
         "Expected token: " + inverseIndex.find(expectedToken)->second +
         " where " + current->content + " found";
-    std::string tokenDump;
-    int i = 0;
-    while (current->code != TOKEN_EOF && i < 5) {
-      tokenDump += current->content + ", ";
-      i++;
-      current++;
-    }
-    rejeito(errorMsg + " - TOKEN DUMP: [" + tokenDump + "]");
+    printTokenDump(current);
+    rejeito(errorMsg);
   }
   current++;
 }
@@ -715,6 +726,11 @@ int main(int argc, char *argv[]) {
   for (auto &[nome, tipo] : tabela_simbolos)
     std::cout << nome << " - " << symbolTypeNames[tipo] << '\n';
 #endif
-  std::cout << "Aceito\n";
+  if (it->code == TOKEN_EOF)
+    std::cout << "Aceito\n";
+  else {
+    printTokenDump(it);
+    rejeito("Não se chegou ao final do programa");
+  }
   return 0;
 }
