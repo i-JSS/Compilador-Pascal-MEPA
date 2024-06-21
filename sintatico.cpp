@@ -135,6 +135,7 @@ void chamada_funcao(std::vector<token>::iterator &current);
 void check_token(std::vector<token>::iterator &current,
                  TokenCode expectedToken);
 void rejeito(std::string msg);
+bool isRelacao(TokenCode code);
 
 // -- ANÁLISE LÉXICA
 TokenType getTokenType(TokenCode code);
@@ -519,8 +520,116 @@ void comando_sem_rotulo(std::vector<token>::iterator &current) {
   }
 }
 
+void atribuicao(std::vector<token>::iterator &current) {
+  variavel(current);
+  check_token(current, TOKEN_ASSIGNMENT);
+  expressao(current);
+}
+
+void chamada_procedimento(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_IDENTIFIER);
+  if (current->code == TOKEN_LPARENTHESIS) {
+    check_token(current, TOKEN_LPARENTHESIS);
+    lista_expressoes(current);
+    check_token(current, TOKEN_RPARENTHESIS);
+  }
+}
+
+void desvio(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_GOTO);
+  check_token(current, TOKEN_NUMBER);
+}
+
+void comando_condicional(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_IF);
+  expressao(current);
+  check_token(current, TOKEN_THEN);
+  comando_sem_rotulo(current);
+  if (current->code == TOKEN_ELSE) {
+    check_token(current, TOKEN_ELSE);
+    comando_sem_rotulo(current);
+  }
+}
+
+void comando_repetitivo(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_WHILE);
+  expressao(current);
+  check_token(current, TOKEN_DO);
+  comando_sem_rotulo(current);
+}
+
+void lista_expressoes(std::vector<token>::iterator &current) {
+  expressao(current);
+  while (current->code == TOKEN_COMMA) {
+    current++;
+    expressao(current);
+  }
+}
+
+void expressao(std::vector<token>::iterator &current) {
+  expressao_simples(current);
+  if (isRelacao(current->code)) {
+    current++;
+    expressao_simples(current);
+  }
+}
+
+void expressao_simples(std::vector<token>::iterator &current) {
+  if (current->code == TOKEN_PLUS || current->code == TOKEN_MINUS)
+    current++;
+  termo(current);
+  while (current->code == TOKEN_PLUS || current->code == TOKEN_MINUS ||
+         current->code == TOKEN_OR) {
+    current++;
+    termo(current);
+  }
+}
+
+void termo(std::vector<token>::iterator &current) {
+  fator(current);
+  while (current->code == TOKEN_ASTERISK || current->code == TOKEN_DIV ||
+         current->code == TOKEN_AND) {
+    current++;
+    fator(current);
+  }
+}
+
+void fator(std::vector<token>::iterator &current) {
+  // como diferenciar chamadas de função?
+  switch (current->code) {
+  case TOKEN_NUMBER:
+    current++;
+    break;
+  case TOKEN_LPARENTHESIS:
+    current++;
+    expressao(current);
+    check_token(current, TOKEN_RPARENTHESIS);
+    break;
+  case TOKEN_NOT:
+    current++;
+    fator(current);
+    break;
+  case TOKEN_IDENTIFIER:
+    // TODO: COMO DIFERENCIAR FUNÇÃO DE VARIÁVEL??? sem função atualmente
+    variavel(current);
+    break;
+  default:
+    rejeito("ESPERADO NUMERO, PARENTESE, NOT OU IDENTIFICADOR, RECEBIDO " +
+            current->content);
+    break;
+  }
+}
+
 void variavel(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_IDENTIFIER);
+}
+
+void chamada_funcao(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_IDENTIFIER);
+  if (current->code == TOKEN_LPARENTHESIS) {
+    current++;
+    lista_expressoes(current);
+  }
 }
 
 // -- FUNÇÕES DE UTILIDADE --
@@ -543,6 +652,12 @@ void rejeito(std::string msg) {
   std::cout << "Rejeito\n";
   std::cerr << "Erro: " << msg << '\n';
   exit(0);
+}
+
+bool isRelacao(TokenCode code) {
+  return code == TOKEN_EQUAL || code == TOKEN_NOTEQUAL ||
+         code == TOKEN_LESSTHAN || code == TOKEN_LESSEQUAL ||
+         code == TOKEN_GREATEREQUAL || code == TOKEN_GREATERTHAN;
 }
 
 int main(int argc, char *argv[]) {
