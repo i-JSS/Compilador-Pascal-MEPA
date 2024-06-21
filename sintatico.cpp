@@ -113,6 +113,8 @@ TokenType getTokenType(TokenCode code) {
   return TOKENTYPE_UNKNOWN;
 }
 
+void comando_composto(std::vector<token>::iterator &current);
+void bloco(std::vector<token>::iterator &current);
 const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
     {".", TOKEN_PERIOD},       {":", TOKEN_COLON},
     {",", TOKEN_COMMA},        {"(", TOKEN_LPARENTHESIS},
@@ -190,7 +192,9 @@ const std::unordered_map<TokenCode, std::string> inverseIndex = {
     {TOKEN_WRITE, "write"},
     {TOKEN_NOT, "not"},
     {TOKEN_OF, "of"},
-    {TOKEN_OR, "or"}};
+    {TOKEN_OR, "or"},
+    {TOKEN_IDENTIFIER, "IDENTIFIER"},
+    {TOKEN_NUMBER, "NUMBER"}};
 
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end) {
@@ -317,15 +321,147 @@ void check_token(std::vector<token>::iterator &current,
                  TokenCode expectedToken) {
   if (current->code != expectedToken) {
     std::string errorMsg =
-        "Expected token: " + inverseIndex.find(current->code)->second +
-        " where " + current->content + "found";
+        "Expected token: " + inverseIndex.find(expectedToken)->second +
+        " where " + current->content + " found";
     rejeito(errorMsg);
   }
   current++;
 }
 
-void program(std::vector<token>::iterator &current) {
+void lista_identificadores(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_IDENTIFIER);
+  while (current->code == TOKEN_COMMA) {
+    check_token(current, TOKEN_COMMA);
+    check_token(current, TOKEN_IDENTIFIER);
+  }
+}
+
+void tipo(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_IDENTIFIER);
+}
+
+void declaraco_rotulos(std::vector<token>::iterator &current) {
+  if (current->code != TOKEN_LABEL)
+    return;
+  check_token(current, TOKEN_LABEL);
+  check_token(current, TOKEN_NUMBER);
+  while (current->code == TOKEN_COMMA) {
+    current++;
+    check_token(current, TOKEN_NUMBER);
+  }
+}
+
+void declaracao_variaveis(std::vector<token>::iterator &current) {
+  lista_identificadores(current);
+  tipo(current);
+}
+
+void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
+  if (current->code != TOKEN_VAR)
+    return;
+  check_token(current, TOKEN_VAR);
+  declaracao_variaveis(current);
+  while (current->code == TOKEN_SEMICOLON) {
+    current++;
+    declaracao_variaveis(current);
+  }
+  check_token(current, TOKEN_SEMICOLON);
+}
+
+void secao_parametros_formais(std::vector<token>::iterator &current) {
+  if (current->code != TOKEN_VAR)
+    return;
+  check_token(current, TOKEN_VAR);
+  lista_identificadores(current);
+  check_token(current, TOKEN_COLON);
+  check_token(current, TOKEN_IDENTIFIER);
+}
+
+// Talvez não seja opcional sempre
+void parametros_formais(std::vector<token>::iterator &current) {
+  if (current->code != TOKEN_LPARENTHESIS)
+    return;
+  check_token(current, TOKEN_LPARENTHESIS);
+  secao_parametros_formais(current);
+  while (current->code == TOKEN_SEMICOLON) {
+    current++;
+    secao_parametros_formais(current);
+  }
+  check_token(current, TOKEN_RPARENTHESIS);
+}
+
+void declaracao_de_procedimento(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_PROCEDURE);
+  check_token(current, TOKEN_IDENTIFIER);
+  parametros_formais(current);
+  check_token(current, TOKEN_SEMICOLON);
+  bloco(current);
+}
+
+void declaracao_de_funcao(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_PROCEDURE);
+  check_token(current, TOKEN_IDENTIFIER);
+  parametros_formais(current);
+  check_token(current, TOKEN_COLON);
+  check_token(current, TOKEN_IDENTIFIER);
+  check_token(current, TOKEN_SEMICOLON);
+  bloco(current);
+}
+
+void parte_declaraco_subrotinas(std::vector<token>::iterator &current) {
+  if (current->code != TOKEN_PROCEDURE && current->code != TOKEN_FUNCTION)
+    return;
+  while (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION) {
+    current++;
+    check_token(current, TOKEN_SEMICOLON);
+  }
+}
+
+void comando_sem_rotulo(std::vector<token>::iterator &current) {
+  if (current->code == TOKEN_IF)
+    comando_condicional(current);
+  else if (current->code == TOKEN_WHILE)
+    comando_repetitivo(current);
+  else if (current->code == TOKEN_BEGIN)
+    comando_composto(current) else if (current->code == TOKEN_GOTO)
+        desvio(current);
+  else if (current->code == TOKEN_IDENTIFIER)
+}
+
+void comando(std::vector<token>::iterator &current) {
+  if (current->code == TOKEN_NUMBER) {
+    check_token(current, TOKEN_NUMBER);
+    check_token(current, TOKEN_COLON);
+  }
+  comando_sem_rotulo(current);
+}
+
+void comando_composto(std::vector<token>::iterator &current) {
+  check_token(current, TOKEN_BEGIN);
+  comando(current);
+  while (current->code == TOKEN_SEMICOLON) {
+    current++;
+    comando(current);
+  }
+  check_token(current, TOKEN_END);
+}
+
+void bloco(std::vector<token>::iterator &current) {
+  declaraco_rotulos(current);
+  parte_declaraco_variaveis(current);
+  parte_declaraco_subrotinas(current);
+  comando_composto(current);
+}
+
+void programa(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_PROGRAM);
+  check_token(current, TOKEN_IDENTIFIER);
+  check_token(current, TOKEN_LPARENTHESIS);
+  lista_identificadores(current);
+  check_token(current, TOKEN_RPARENTHESIS);
+  check_token(current, TOKEN_SEMICOLON);
+  bloco(current);
+  check_token(current, TOKEN_PERIOD);
 }
 
 int main(int argc, char *argv[]) {
@@ -339,7 +475,7 @@ int main(int argc, char *argv[]) {
               << token.content << "\n";
 #endif
   auto it = tokens.begin();
-  program(it);
+  programa(it);
   std::cout << "Aceito\n";
   return 0;
 }
