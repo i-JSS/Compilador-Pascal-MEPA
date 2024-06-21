@@ -1,6 +1,8 @@
 #include <cctype>
+#include <fstream>
 #include <iostream>
 #include <map>
+#include <ostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -229,12 +231,18 @@ std::vector<token> getTokens(std::string source_code) {
   return tokens;
 }
 
-std::string read_source_file() {
+std::string read_source_file(std::string file_path) {
+  std::ifstream file(file_path);
+  if (!file.is_open()) {
+    std::cerr << "Erro awo abrir arquivo: " << file_path << std::endl;
+    exit(1);
+  }
   std::string buffer;
   std::string source_code;
-  while (std::getline(std::cin, buffer))
+  while (std::getline(file, buffer))
     source_code += buffer + '\n';
 
+  file.close();
   return source_code;
 }
 
@@ -256,8 +264,10 @@ std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
   return counts;
 }
 
-int main() {
-  std::string source_code = read_source_file();
+int main(int argc, char *argv[]) {
+  // argumento 0 é a própia chamada do executável
+  std::string file_path(argv[1]);
+  std::string source_code = read_source_file(file_path);
   std::vector<token> tokens = getTokens(source_code);
 #ifdef PRINT_TOKENS
   for (auto &token : tokens)
@@ -270,4 +280,5 @@ int main() {
     std::string name = tokenTypeNames[count.first];
     std::cout << name << ": " << count.second << "\n";
   }
+  return 0;
 }
