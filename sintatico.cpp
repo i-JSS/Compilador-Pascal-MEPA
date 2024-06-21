@@ -341,8 +341,6 @@ void tipo(std::vector<token>::iterator &current) {
 }
 
 void declaraco_rotulos(std::vector<token>::iterator &current) {
-  if (current->code != TOKEN_LABEL)
-    return;
   check_token(current, TOKEN_LABEL);
   check_token(current, TOKEN_NUMBER);
   while (current->code == TOKEN_COMMA) {
@@ -357,8 +355,6 @@ void declaracao_variaveis(std::vector<token>::iterator &current) {
 }
 
 void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
-  if (current->code != TOKEN_VAR)
-    return;
   check_token(current, TOKEN_VAR);
   declaracao_variaveis(current);
   while (current->code == TOKEN_SEMICOLON) {
@@ -369,8 +365,6 @@ void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
 }
 
 void secao_parametros_formais(std::vector<token>::iterator &current) {
-  if (current->code != TOKEN_VAR)
-    return;
   check_token(current, TOKEN_VAR);
   lista_identificadores(current);
   check_token(current, TOKEN_COLON);
@@ -379,10 +373,9 @@ void secao_parametros_formais(std::vector<token>::iterator &current) {
 
 // Talvez não seja opcional sempre
 void parametros_formais(std::vector<token>::iterator &current) {
-  if (current->code != TOKEN_LPARENTHESIS)
-    return;
   check_token(current, TOKEN_LPARENTHESIS);
-  secao_parametros_formais(current);
+  if (current->code == TOKEN_VAR)
+    secao_parametros_formais(current);
   while (current->code == TOKEN_SEMICOLON) {
     current++;
     secao_parametros_formais(current);
@@ -393,7 +386,8 @@ void parametros_formais(std::vector<token>::iterator &current) {
 void declaracao_de_procedimento(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_PROCEDURE);
   check_token(current, TOKEN_IDENTIFIER);
-  parametros_formais(current);
+  if (current->code == TOKEN_LPARENTHESIS)
+    parametros_formais(current);
   check_token(current, TOKEN_SEMICOLON);
   bloco(current);
 }
@@ -409,8 +403,6 @@ void declaracao_de_funcao(std::vector<token>::iterator &current) {
 }
 
 void parte_declaraco_subrotinas(std::vector<token>::iterator &current) {
-  if (current->code != TOKEN_PROCEDURE && current->code != TOKEN_FUNCTION)
-    return;
   while (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION) {
     current++;
     check_token(current, TOKEN_SEMICOLON);
@@ -423,9 +415,15 @@ void comando_sem_rotulo(std::vector<token>::iterator &current) {
   else if (current->code == TOKEN_WHILE)
     comando_repetitivo(current);
   else if (current->code == TOKEN_BEGIN)
-    comando_composto(current) else if (current->code == TOKEN_GOTO)
-        desvio(current);
-  else if (current->code == TOKEN_IDENTIFIER)
+    comando_composto(current);
+  else if (current->code == TOKEN_GOTO)
+    desvio(current);
+  else if (current->code == TOKEN_IDENTIFIER) {
+    // COMO DECIDIR PROCEDIMENTO OU ATRIBUIÇÂO AQUI?
+    // 1 LOOKAHEAD => 2 IDENTIFICADORES
+  }
+  rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR. RECEBIDO: " +
+          current->content);
 }
 
 void comando(std::vector<token>::iterator &current) {
@@ -447,9 +445,12 @@ void comando_composto(std::vector<token>::iterator &current) {
 }
 
 void bloco(std::vector<token>::iterator &current) {
-  declaraco_rotulos(current);
-  parte_declaraco_variaveis(current);
-  parte_declaraco_subrotinas(current);
+  if (current->code == TOKEN_LABEL)
+    declaraco_rotulos(current);
+  if (current->code == TOKEN_VAR)
+    parte_declaraco_variaveis(current);
+  if (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION)
+    parte_declaraco_subrotinas(current);
   comando_composto(current);
 }
 
