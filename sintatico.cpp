@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -9,12 +10,6 @@
 #define TOKENS_TO_DUMP 10
 
 // -- DEFINIÇõES --
-enum SymbolType {
-  SYMBOLTYPE_VARIABLE,
-  SYMBOLTYPE_FUNCTION,
-  SYMBOLTYPE_PROCEDURE,
-  SYMBOLTYPE_TYPE,
-};
 
 enum TokenCode {
   // Tokens especiais:
@@ -253,6 +248,70 @@ public:
 
 // Tabela de símbolos
 
+enum SymbolType {
+  SYMBOLTYPE_VARIABLE,
+  SYMBOLTYPE_FUNCTION,
+  SYMBOLTYPE_PROCEDURE,
+  SYMBOLTYPE_TYPE,
+  SYMBOLTYPE_PARAMETER,
+  SYMBOLTYPE_CONSTANT,
+  SYMBOLTYPE_NOTFOUND,
+};
+
+struct SymbolProperties {
+  SymbolType type;
+  int depth;
+};
+
+class SymbolTable {
+private:
+  std::vector<std::unordered_map<std::string, SymbolProperties>>
+      declaration_stack;
+  int current_depth = 0;
+
+public:
+  SymbolTable() {
+    // Inicializar o escopo global
+    declaration_stack.push_back(
+        std::unordered_map<std::string, SymbolProperties>());
+  }
+
+  int get_depth() const { return current_depth; }
+
+  void push_stack() {
+    current_depth++;
+    declaration_stack.push_back(
+        std::unordered_map<std::string, SymbolProperties>());
+  }
+
+  void pop_stack() {
+    if (current_depth == 0)
+      throw std::runtime_error("Trying to pop while call stack empty");
+
+    current_depth--;
+    declaration_stack.pop_back();
+  }
+
+  SymbolProperties searchSymbol(std::string &identifier) {
+    int search_depth = current_depth;
+    while (search_depth >= 0) {
+      auto found = declaration_stack[search_depth].find(identifier);
+      if (found != declaration_stack[search_depth].end())
+        return found->second;
+      search_depth--;
+    }
+    return {SYMBOLTYPE_NOTFOUND, -1};
+  }
+
+  void insertSymbol(std::string &identifier, SymbolType type) {
+    declaration_stack[current_depth][identifier] = {type, current_depth};
+  }
+
+  void deleteSymbol(std::string &identifier) {
+    declaration_stack[current_depth].erase(identifier);
+  }
+};
+
 class Parser {
 public:
   explicit Parser(std::string &source_code)
@@ -360,7 +419,7 @@ private:
   }
 
   void parte_declaracao_subrotinas() {
-    while (current.code == TOKEN_PROCEDURE || current.code == TOKEN_FUNCTION) {
+    while (isSubrotina(current.code)) {
       if (current.code == TOKEN_PROCEDURE)
         declaracao_procedimento();
       else
