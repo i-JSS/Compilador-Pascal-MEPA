@@ -5,6 +5,7 @@
 #include <ostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #define TOKENS_TO_DUMP 10
 
@@ -377,6 +378,11 @@ std::vector<token> getTokens(std::string source_code) {
 // Tabela de símbolos
 std::unordered_map<std::string, SymbolType> tabela_simbolos;
 
+void insertSymbol(std::vector<token>::iterator &current, SymbolType type) {
+  std::string symbol = (current - 1)->content;
+  tabela_simbolos.insert(std::make_pair(symbol, type));
+}
+
 void programa(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_PROGRAM);
   check_token(current, TOKEN_IDENTIFIER);
@@ -431,11 +437,11 @@ void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
 
 void lista_identificadores(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_IDENTIFIER);
-  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_VARIABLE;
+  insertSymbol(current, SYMBOLTYPE_VARIABLE);
   while (current->code == TOKEN_COMMA) {
     current++;
     check_token(current, TOKEN_IDENTIFIER);
-    tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_VARIABLE;
+    insertSymbol(current, SYMBOLTYPE_VARIABLE);
   }
 }
 
@@ -452,7 +458,7 @@ void parte_declaracao_subrotinas(std::vector<token>::iterator &current) {
 void declaracao_procedimento(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_PROCEDURE);
   check_token(current, TOKEN_IDENTIFIER);
-  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_PROCEDURE;
+  insertSymbol(current, SYMBOLTYPE_PROCEDURE);
   if (current->code == TOKEN_LPARENTHESIS)
     parametros_formais(current);
   check_token(current, TOKEN_SEMICOLON);
@@ -462,7 +468,7 @@ void declaracao_procedimento(std::vector<token>::iterator &current) {
 void declaracao_funcao(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_FUNCTION);
   check_token(current, TOKEN_IDENTIFIER);
-  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_FUNCTION;
+  insertSymbol(current, SYMBOLTYPE_FUNCTION);
   if (current->code == TOKEN_LPARENTHESIS)
     parametros_formais(current);
   check_token(current, TOKEN_COLON);
@@ -487,7 +493,7 @@ void secao_parametros_formais(std::vector<token>::iterator &current) {
   lista_identificadores(current);
   check_token(current, TOKEN_COLON);
   check_token(current, TOKEN_IDENTIFIER);
-  tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_TYPE;
+  insertSymbol(current, SYMBOLTYPE_FUNCTION);
 }
 
 void comando_composto(std::vector<token>::iterator &current) {
