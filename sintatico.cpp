@@ -86,98 +86,11 @@ struct token {
 
 // -- PROTÓTIPOS DE FUNÇÃO --
 
-// -- ANÁLISE SINTÁTICA
-// -- PROGRAMAS E BLOCOS
-void programa(std::vector<token>::iterator &current);
-void bloco(std::vector<token>::iterator &current);
-
-// -- DECLARAÇOES
-void parte_declaraco_rotulos(std::vector<token>::iterator &current);
-// parte_definições_tipos
-// definicao_tipo
-void tipo(std::vector<token>::iterator &current);
-// indice
-void parte_declaraco_variaveis(std::vector<token>::iterator &current);
-void declaracao_variaveis(std::vector<token>::iterator &current);
-void lista_identificadores(std::vector<token>::iterator &current);
-void parte_declaracao_subrotinas(std::vector<token>::iterator &current);
-void declaracao_procedimento(std::vector<token>::iterator &current);
-void declaracao_funcao(std::vector<token>::iterator &current);
-void parametros_formais(std::vector<token>::iterator &current);
-void secao_parametros_formais(std::vector<token>::iterator &current);
-
-// -- COMANDOS
-void comando_composto(std::vector<token>::iterator &current);
-void comando(std::vector<token>::iterator &current);
-void comando_sem_rotulo(std::vector<token>::iterator &current);
-void atribuicao(std::vector<token>::iterator &current);
-void chamada_procedimento(std::vector<token>::iterator &current);
-void desvio(std::vector<token>::iterator &current);
-void comando_condicional(std::vector<token>::iterator &current);
-void comando_repetitivo(std::vector<token>::iterator &current);
-
-// -- EXPRESSÕES (Pode ser feita com análise de precedencia de operadores)
-void lista_expressoes(std::vector<token>::iterator &current);
-void expressao(std::vector<token>::iterator &current);
-void relacao(std::vector<token>::iterator &current);
-void expressao_simples(std::vector<token>::iterator &current);
-void termo(std::vector<token>::iterator &current);
-void fator(std::vector<token>::iterator &current);
-void variavel(std::vector<token>::iterator &current);
-void chamada_funcao(std::vector<token>::iterator &current);
-
-// -- UTILIDADE SINTATICA
-void check_token(std::vector<token>::iterator &current,
-                 TokenCode expectedToken);
-void rejeito(std::string msg);
-bool isRelacao(TokenCode code);
-
-// -- ANÁLISE LÉXICA
-token analisador_lexico(std::string::iterator &prox,
-                        const std::string::iterator &end);
-std::vector<token> getTokens(std::string source_code);
-
 // -- FUNÇÕES DE UTILIDADE
 std::string read_source_file(std::string file_path);
 void printTokenDump(std::vector<token>::iterator &current);
 
 // -- CONSTANTES --
-const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
-                                                  "PROCEDURE", "TYPE"};
-const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
-    {".", TOKEN_PERIOD},       {":", TOKEN_COLON},
-    {",", TOKEN_COMMA},        {"(", TOKEN_LPARENTHESIS},
-    {")", TOKEN_RPARENTHESIS}, {"=", TOKEN_EQUAL},
-    {"<", TOKEN_LESSTHAN},     {">", TOKEN_GREATERTHAN},
-    {"+", TOKEN_PLUS},         {"-", TOKEN_MINUS},
-    {"*", TOKEN_ASTERISK},     {"[", TOKEN_LBRACKET},
-    {"]", TOKEN_RBRACKET},     {":=", TOKEN_ASSIGNMENT},
-    {"<=", TOKEN_LESSEQUAL},   {">=", TOKEN_GREATEREQUAL},
-    {"<>", TOKEN_NOTEQUAL},    {";", TOKEN_SEMICOLON},
-    {"/", TOKEN_SLASH}};
-
-const std::unordered_map<std::string, TokenCode> palavras_chave = {
-    {"program", TOKEN_PROGRAM},
-    {"label", TOKEN_LABEL},
-    {"type", TOKEN_TYPE},
-    {"array", TOKEN_ARRAY},
-    {"var", TOKEN_VAR},
-    {"procedure", TOKEN_PROCEDURE},
-    {"function", TOKEN_FUNCTION},
-    {"begin", TOKEN_BEGIN},
-    {"end", TOKEN_END},
-    {"if", TOKEN_IF},
-    {"then", TOKEN_THEN},
-    {"else", TOKEN_ELSE},
-    {"while", TOKEN_WHILE},
-    {"do", TOKEN_DO},
-    {"div", TOKEN_DIV},
-    {"and", TOKEN_AND},
-    {"goto", TOKEN_GOTO},
-    // {"read", TOKEN_READ}, {"write", TOKEN_WRITE},
-    {"not", TOKEN_NOT},
-    {"of", TOKEN_OF},
-    {"or", TOKEN_OR}};
 
 const std::unordered_map<TokenCode, std::string> inverseIndex = {
     {TOKEN_PERIOD, "."},
@@ -224,383 +137,461 @@ const std::unordered_map<TokenCode, std::string> inverseIndex = {
     {TOKEN_IDENTIFIER, "IDENTIFIER"},
     {TOKEN_NUMBER, "NUMBER"}};
 
-// -- ANÁLISE LÉXICA --
-token analisador_lexico(std::string::iterator &prox,
-                        const std::string::iterator &end) {
-  std::string atom;
-  while (prox != end && isspace(*prox))
-    prox++;
+class Lexer {
+private:
+  std::string::iterator prox;
+  const std::string::iterator end;
 
-  if (prox == end)
-    return {"#", TOKEN_EOF};
+  const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
+      {".", TOKEN_PERIOD},       {":", TOKEN_COLON},
+      {",", TOKEN_COMMA},        {"(", TOKEN_LPARENTHESIS},
+      {")", TOKEN_RPARENTHESIS}, {"=", TOKEN_EQUAL},
+      {"<", TOKEN_LESSTHAN},     {">", TOKEN_GREATERTHAN},
+      {"+", TOKEN_PLUS},         {"-", TOKEN_MINUS},
+      {"*", TOKEN_ASTERISK},     {"[", TOKEN_LBRACKET},
+      {"]", TOKEN_RBRACKET},     {":=", TOKEN_ASSIGNMENT},
+      {"<=", TOKEN_LESSEQUAL},   {">=", TOKEN_GREATEREQUAL},
+      {"<>", TOKEN_NOTEQUAL},    {";", TOKEN_SEMICOLON},
+      {"/", TOKEN_SLASH}};
 
-  std::string s(1, *prox);
-  if (simbolos_especiais.find(s) != simbolos_especiais.end()) {
-    prox++;
-    if (s == ":" && *prox == '=') {
-      s = ":=";
+  const std::unordered_map<std::string, TokenCode> palavras_chave = {
+      {"program", TOKEN_PROGRAM},
+      {"label", TOKEN_LABEL},
+      {"type", TOKEN_TYPE},
+      {"array", TOKEN_ARRAY},
+      {"var", TOKEN_VAR},
+      {"procedure", TOKEN_PROCEDURE},
+      {"function", TOKEN_FUNCTION},
+      {"begin", TOKEN_BEGIN},
+      {"end", TOKEN_END},
+      {"if", TOKEN_IF},
+      {"then", TOKEN_THEN},
+      {"else", TOKEN_ELSE},
+      {"while", TOKEN_WHILE},
+      {"do", TOKEN_DO},
+      {"div", TOKEN_DIV},
+      {"and", TOKEN_AND},
+      {"goto", TOKEN_GOTO},
+      // {"read", TOKEN_READ}, {"write", TOKEN_WRITE},
+      {"not", TOKEN_NOT},
+      {"of", TOKEN_OF},
+      {"or", TOKEN_OR}};
+
+public:
+  explicit Lexer(std::string &source_code)
+      : prox(source_code.begin()), end(source_code.end()) {}
+
+  token getNextToken() {
+    std::string atom;
+    while (prox != end && isspace(*prox))
       prox++;
-    } else if (s == "<" && *prox == '>') {
-      s = "<>";
+
+    if (prox == end)
+      return {"#", TOKEN_EOF};
+
+    std::string s(1, *prox);
+    if (simbolos_especiais.find(s) != simbolos_especiais.end()) {
       prox++;
-    } else if (s == "<" && *prox == '=') {
-      s = "<=";
-      prox++;
-    } else if (s == ">" && *prox == '=') {
-      s = ">=";
-      prox++;
-    } else if (s == "(" && *prox == '*') {
-      s = "(*";
-      prox++;
-      auto temp = prox;
-      while (temp != end) {
-        if ((temp + 1) != end && *temp == '*' && *(temp + 1) == ')') {
-          prox = temp + 2;
-          return {s + "*)", TOKEN_COMMENTS}; // EXPLODE COMENTARIO
+      if (s == ":" && *prox == '=') {
+        s = ":=";
+        prox++;
+      } else if (s == "<" && *prox == '>') {
+        s = "<>";
+        prox++;
+      } else if (s == "<" && *prox == '=') {
+        s = "<=";
+        prox++;
+      } else if (s == ">" && *prox == '=') {
+        s = ">=";
+        prox++;
+      } else if (s == "(" && *prox == '*') {
+        s = "(*";
+        prox++;
+        auto temp = prox;
+        while (temp != end) {
+          if ((temp + 1) != end && *temp == '*' && *(temp + 1) == ')') {
+            prox = temp + 2;
+            return {s + "*)", TOKEN_COMMENTS}; // EXPLODE COMENTARIO
+          }
+          s.push_back(*temp);
+          temp++;
         }
-        s.push_back(*temp);
-        temp++;
+        prox--;
+        return {"(", TOKEN_LPARENTHESIS};
       }
-      prox--;
-      return {"(", TOKEN_LPARENTHESIS};
+      return {s, simbolos_especiais.find(s)->second};
     }
-    return {s, simbolos_especiais.find(s)->second};
-  }
 
-  if (islower(*prox)) {
-    while (prox != end && (islower(*prox) || isdigit(*prox))) {
-      atom.push_back(*prox);
-      prox++;
+    if (islower(*prox)) {
+      while (prox != end && (islower(*prox) || isdigit(*prox))) {
+        atom.push_back(*prox);
+        prox++;
+      }
+      if (palavras_chave.find(atom) != palavras_chave.end())
+        return {atom, palavras_chave.find(atom)->second};
+      else
+        return {atom, TOKEN_IDENTIFIER};
     }
-    if (palavras_chave.find(atom) != palavras_chave.end())
-      return {atom, palavras_chave.find(atom)->second};
-    else
-      return {atom, TOKEN_IDENTIFIER};
-  }
 
-  if (isdigit(*prox)) {
-    bool rational_part = false;
-    while (prox != end && (isdigit(*prox) || (*prox == '.' && !rational_part &&
-                                              isdigit(*(prox + 1))))) {
-      if (*prox == '.')
-        rational_part = true;
-      atom.push_back(*prox++);
+    if (isdigit(*prox)) {
+      bool rational_part = false;
+      while (prox != end &&
+             (isdigit(*prox) ||
+              (*prox == '.' && !rational_part && isdigit(*(prox + 1))))) {
+        if (*prox == '.')
+          rational_part = true;
+        atom.push_back(*prox++);
+      }
+      return {atom, TOKEN_NUMBER};
     }
-    return {atom, TOKEN_NUMBER};
+
+    prox++;
+    return {s, TOKEN_UNKNOWN};
   }
-
-  prox++;
-  return {s, TOKEN_UNKNOWN};
-}
-
-std::vector<token> getTokens(std::string source_code) {
-  auto it = source_code.begin();
-  std::vector<token> tokens;
-
-  do {
-    tokens.push_back(analisador_lexico(it, source_code.end()));
-    if (tokens.back().code == TOKEN_ERROR) {
-      std::cerr << tokens.back().content << '\n';
-      exit(1);
-    } else if (tokens.back().code == TOKEN_COMMENTS)
-      tokens.pop_back();
-  } while (tokens.back().code != TOKEN_EOF);
-  return tokens;
-}
-
+};
 // -- ANÁLISE SINTÁTICA
 
 // Tabela de símbolos
-std::unordered_map<std::string, SymbolType> tabela_simbolos;
 
-void insertSymbol(std::vector<token>::iterator &current, SymbolType type) {
-  std::string symbol = (current - 1)->content;
-  tabela_simbolos.insert(std::make_pair(symbol, type));
-}
+class Parser {
+public:
+  explicit Parser(std::string &source_code)
+      : lexer(source_code), current(lexer.getNextToken()) {}
 
-void programa(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_PROGRAM);
-  check_token(current, TOKEN_IDENTIFIER);
-  check_token(current, TOKEN_LPARENTHESIS);
-  lista_identificadores(current);
-  check_token(current, TOKEN_RPARENTHESIS);
-  check_token(current, TOKEN_SEMICOLON);
-  bloco(current);
-  check_token(current, TOKEN_PERIOD);
-}
-
-void bloco(std::vector<token>::iterator &current) {
-  if (current->code == TOKEN_LABEL)
-    parte_declaraco_rotulos(current);
-  if (current->code == TOKEN_VAR)
-    parte_declaraco_variaveis(current);
-  if (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION)
-    parte_declaracao_subrotinas(current);
-  comando_composto(current);
-}
-
-void parte_declaraco_rotulos(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_LABEL);
-  check_token(current, TOKEN_NUMBER);
-  while (current->code == TOKEN_COMMA) {
-    current++;
-    check_token(current, TOKEN_NUMBER);
+  void parse() {
+    programa();
+    if (current.code == TOKEN_EOF) {
+      std::cout << "Aceito\n";
+      exit(0);
+    } else {
+      rejeito("Não se chegou ao final do programa");
+    }
   }
-  check_token(current, TOKEN_SEMICOLON);
-}
 
-void tipo(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_IDENTIFIER);
-}
+private:
+  const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
+                                                    "PROCEDURE", "TYPE"};
+  Lexer lexer;
+  token current;
+  std::unordered_map<std::string, SymbolType> tabela_simbolos;
 
-void declaracao_variaveis(std::vector<token>::iterator &current) {
-  lista_identificadores(current);
-  check_token(current, TOKEN_COLON);
-  tipo(current);
-}
-
-void parte_declaraco_variaveis(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_VAR);
-  declaracao_variaveis(current);
-  while (current->code == TOKEN_SEMICOLON &&
-         (current + 1)->code == TOKEN_IDENTIFIER) {
-    current++;
-    declaracao_variaveis(current);
+  void insertSymbol(SymbolType type) {
+    std::string symbol = current.content;
+    tabela_simbolos.insert(std::make_pair(symbol, type));
   }
-  check_token(current, TOKEN_SEMICOLON);
-}
 
-void lista_identificadores(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_IDENTIFIER);
-  insertSymbol(current, SYMBOLTYPE_VARIABLE);
-  while (current->code == TOKEN_COMMA) {
-    current++;
-    check_token(current, TOKEN_IDENTIFIER);
-    insertSymbol(current, SYMBOLTYPE_VARIABLE);
+  void rejeito(std::string msg) {
+    std::cout << "Rejeito\n";
+    std::cerr << "Erro: " << msg << '\n';
+    exit(0);
   }
-}
 
-void parte_declaracao_subrotinas(std::vector<token>::iterator &current) {
-  while (current->code == TOKEN_PROCEDURE || current->code == TOKEN_FUNCTION) {
-    if (current->code == TOKEN_PROCEDURE)
-      declaracao_procedimento(current);
-    else
-      declaracao_funcao(current);
-    check_token(current, TOKEN_SEMICOLON);
+  void next_token() { current = lexer.getNextToken(); }
+
+  void check_token(TokenCode expectedToken) {
+    if (current.code != expectedToken) {
+      std::string errorMsg =
+          "Expected token: " + inverseIndex.find(expectedToken)->second +
+          " where " + current.content + " found";
+      rejeito(errorMsg);
+    }
+    next_token();
   }
-}
 
-void declaracao_procedimento(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_PROCEDURE);
-  check_token(current, TOKEN_IDENTIFIER);
-  insertSymbol(current, SYMBOLTYPE_PROCEDURE);
-  if (current->code == TOKEN_LPARENTHESIS)
-    parametros_formais(current);
-  check_token(current, TOKEN_SEMICOLON);
-  bloco(current);
-}
-
-void declaracao_funcao(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_FUNCTION);
-  check_token(current, TOKEN_IDENTIFIER);
-  insertSymbol(current, SYMBOLTYPE_FUNCTION);
-  if (current->code == TOKEN_LPARENTHESIS)
-    parametros_formais(current);
-  check_token(current, TOKEN_COLON);
-  check_token(current, TOKEN_IDENTIFIER);
-  check_token(current, TOKEN_SEMICOLON);
-  bloco(current);
-}
-
-void parametros_formais(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_LPARENTHESIS);
-  secao_parametros_formais(current);
-  while (current->code == TOKEN_SEMICOLON) {
-    current++;
-    secao_parametros_formais(current);
+  void programa() {
+    check_token(TOKEN_PROGRAM);
+    check_token(TOKEN_IDENTIFIER);
+    check_token(TOKEN_LPARENTHESIS);
+    lista_identificadores();
+    check_token(TOKEN_RPARENTHESIS);
+    check_token(TOKEN_SEMICOLON);
+    bloco();
+    check_token(TOKEN_PERIOD);
   }
-  check_token(current, TOKEN_RPARENTHESIS);
-}
 
-void secao_parametros_formais(std::vector<token>::iterator &current) {
-  if (current->code == TOKEN_VAR)
-    check_token(current, TOKEN_VAR);
-  lista_identificadores(current);
-  check_token(current, TOKEN_COLON);
-  check_token(current, TOKEN_IDENTIFIER);
-  insertSymbol(current, SYMBOLTYPE_FUNCTION);
-}
-
-void comando_composto(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_BEGIN);
-  comando(current);
-  while (current->code == TOKEN_SEMICOLON) {
-    current++;
-    comando(current);
+  void bloco() {
+    if (current.code == TOKEN_LABEL)
+      parte_declaraco_rotulos();
+    if (current.code == TOKEN_VAR)
+      parte_declaraco_variaveis();
+    if (current.code == TOKEN_PROCEDURE || current.code == TOKEN_FUNCTION)
+      parte_declaracao_subrotinas();
+    comando_composto();
   }
-  check_token(current, TOKEN_END);
-}
 
-void comando(std::vector<token>::iterator &current) {
-  if (current->code == TOKEN_NUMBER) {
-    check_token(current, TOKEN_NUMBER);
-    check_token(current, TOKEN_COLON);
+  void parte_declaraco_rotulos() {
+    check_token(TOKEN_LABEL);
+    check_token(TOKEN_NUMBER);
+    while (current.code == TOKEN_COMMA) {
+      next_token();
+      check_token(TOKEN_NUMBER);
+    }
+    check_token(TOKEN_SEMICOLON);
   }
-  comando_sem_rotulo(current);
-}
 
-void comando_sem_rotulo(std::vector<token>::iterator &current) {
-  switch (current->code) {
-  case TOKEN_IF:
-    comando_condicional(current);
-    break;
-  case TOKEN_WHILE:
-    comando_repetitivo(current);
-    break;
-  case TOKEN_BEGIN:
-    comando_composto(current);
-    break;
-  case TOKEN_GOTO:
-    desvio(current);
-    break;
-  case TOKEN_IDENTIFIER:
-    switch ((current + 1)->code) {
-    case TOKEN_ASSIGNMENT:
-      atribuicao(current);
+  void tipo() { check_token(TOKEN_IDENTIFIER); }
+
+  void declaracao_variaveis() {
+    lista_identificadores();
+    check_token(TOKEN_COLON);
+    tipo();
+  }
+
+  // Refatorar declaracao de variavieis
+  void parte_declaraco_variaveis() {
+    // check_token(TOKEN_VAR);
+    // declaracao_variaveis();
+    // while (current.code == TOKEN_SEMICOLON &&
+    //        (current + 1)->code == TOKEN_IDENTIFIER) {
+    //   next_token();
+    //   declaracao_variaveis();
+    // }
+    // check_token(TOKEN_SEMICOLON);
+  }
+
+  void lista_identificadores() {
+    check_token(TOKEN_IDENTIFIER);
+    insertSymbol(SYMBOLTYPE_VARIABLE);
+    while (current.code == TOKEN_COMMA) {
+      next_token();
+      check_token(TOKEN_IDENTIFIER);
+      insertSymbol(SYMBOLTYPE_VARIABLE);
+    }
+  }
+
+  void parte_declaracao_subrotinas() {
+    while (current.code == TOKEN_PROCEDURE || current.code == TOKEN_FUNCTION) {
+      if (current.code == TOKEN_PROCEDURE)
+        declaracao_procedimento();
+      else
+        declaracao_funcao();
+      check_token(TOKEN_SEMICOLON);
+    }
+  }
+
+  void declaracao_procedimento() {
+    check_token(TOKEN_PROCEDURE);
+    check_token(TOKEN_IDENTIFIER);
+    insertSymbol(SYMBOLTYPE_PROCEDURE);
+    if (current.code == TOKEN_LPARENTHESIS)
+      parametros_formais();
+    check_token(TOKEN_SEMICOLON);
+    bloco();
+  }
+
+  void declaracao_funcao() {
+    check_token(TOKEN_FUNCTION);
+    check_token(TOKEN_IDENTIFIER);
+    insertSymbol(SYMBOLTYPE_FUNCTION);
+    if (current.code == TOKEN_LPARENTHESIS)
+      parametros_formais();
+    check_token(TOKEN_COLON);
+    check_token(TOKEN_IDENTIFIER);
+    check_token(TOKEN_SEMICOLON);
+    bloco();
+  }
+
+  void parametros_formais() {
+    check_token(TOKEN_LPARENTHESIS);
+    secao_parametros_formais();
+    while (current.code == TOKEN_SEMICOLON) {
+      next_token();
+      secao_parametros_formais();
+    }
+    check_token(TOKEN_RPARENTHESIS);
+  }
+
+  void secao_parametros_formais() {
+    if (current.code == TOKEN_VAR)
+      check_token(TOKEN_VAR);
+    lista_identificadores();
+    check_token(TOKEN_COLON);
+    check_token(TOKEN_IDENTIFIER);
+    insertSymbol(SYMBOLTYPE_FUNCTION);
+  }
+
+  void comando_composto() {
+    check_token(TOKEN_BEGIN);
+    comando();
+    while (current.code == TOKEN_SEMICOLON) {
+      next_token();
+      comando();
+    }
+    check_token(TOKEN_END);
+  }
+
+  void comando() {
+    if (current.code == TOKEN_NUMBER) {
+      check_token(TOKEN_NUMBER);
+      check_token(TOKEN_COLON);
+    }
+    comando_sem_rotulo();
+  }
+
+  void comando_sem_rotulo() {
+    // switch (current.code) {
+    // case TOKEN_IF:
+    //   comando_condicional();
+    //   break;
+    // case TOKEN_WHILE:
+    //   comando_repetitivo();
+    //   break;
+    // case TOKEN_BEGIN:
+    //   comando_composto();
+    //   break;
+    // case TOKEN_GOTO:
+    //   desvio();
+    //   break;
+    // // Tabela de símbolos aqui!
+    // case TOKEN_IDENTIFIER:
+    //   switch ((current + 1)->code) {
+    //   case TOKEN_ASSIGNMENT:
+    //     atribuicao();
+    //     break;
+    //   default:
+    //     chamada_procedimento();
+    //     break;
+    //   }
+    //   break;
+    // default:
+    //   rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR RECEBIDO: "
+    //   +
+    //           current.content);
+    //   break;
+    // }
+  }
+
+  void atribuicao() {
+    variavel();
+    check_token(TOKEN_ASSIGNMENT);
+    expressao();
+  }
+
+  void chamada_procedimento() {
+    check_token(TOKEN_IDENTIFIER);
+    if (current.code == TOKEN_LPARENTHESIS) {
+      check_token(TOKEN_LPARENTHESIS);
+      lista_expressoes();
+      check_token(TOKEN_RPARENTHESIS);
+    }
+  }
+
+  void desvio() {
+    check_token(TOKEN_GOTO);
+    check_token(TOKEN_NUMBER);
+  }
+
+  void comando_condicional() {
+    check_token(TOKEN_IF);
+    expressao();
+    check_token(TOKEN_THEN);
+    comando_sem_rotulo();
+    if (current.code == TOKEN_ELSE) {
+      check_token(TOKEN_ELSE);
+      comando_sem_rotulo();
+    }
+  }
+
+  void comando_repetitivo() {
+    check_token(TOKEN_WHILE);
+    expressao();
+    check_token(TOKEN_DO);
+    comando_sem_rotulo();
+  }
+
+  void lista_expressoes() {
+    expressao();
+    while (current.code == TOKEN_COMMA) {
+      next_token();
+      expressao();
+    }
+  }
+
+  void expressao() {
+    expressao_simples();
+    if (isRelacao(current.code)) {
+      next_token();
+      expressao_simples();
+    }
+  }
+
+  void expressao_simples() {
+    if (isArithmeticOp(current.code))
+      next_token();
+    termo();
+    while (isArithmeticOp(current.code) || current.code == TOKEN_OR) {
+      next_token();
+      termo();
+    }
+  }
+
+  void termo() {
+    fator();
+    while (current.code == TOKEN_ASTERISK || current.code == TOKEN_DIV ||
+           current.code == TOKEN_AND) {
+      next_token();
+      fator();
+    }
+  }
+
+  void fator() {
+    // refatorar tabela de símbolos
+    switch (current.code) {
+    case TOKEN_NUMBER:
+      next_token();
+      break;
+    case TOKEN_LPARENTHESIS:
+      next_token();
+      expressao();
+      check_token(TOKEN_RPARENTHESIS);
+      break;
+    case TOKEN_NOT:
+      next_token();
+      fator();
+      break;
+    case TOKEN_IDENTIFIER:
+      // Talvez o erro tenha a ver com isso aqui?
+      if (tabela_simbolos[current.content] == SYMBOLTYPE_VARIABLE)
+        variavel();
+      else if (tabela_simbolos[current.content] == SYMBOLTYPE_FUNCTION)
+        chamada_funcao();
+      else
+
+        rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
+                current.content);
       break;
     default:
-      chamada_procedimento(current);
+      rejeito("ESPERADO NUMERO, PARENTESE, NOT OU IDENTIFICADOR, RECEBIDO " +
+              current.content);
       break;
     }
-    break;
-  default:
-    printTokenDump(current);
-    rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR RECEBIDO: " +
-            current->content);
-    break;
   }
-}
 
-void atribuicao(std::vector<token>::iterator &current) {
-  variavel(current);
-  check_token(current, TOKEN_ASSIGNMENT);
-  expressao(current);
-}
+  void variavel() { check_token(TOKEN_IDENTIFIER); }
 
-void chamada_procedimento(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_IDENTIFIER);
-  if (current->code == TOKEN_LPARENTHESIS) {
-    check_token(current, TOKEN_LPARENTHESIS);
-    lista_expressoes(current);
-    check_token(current, TOKEN_RPARENTHESIS);
+  void chamada_funcao() {
+    check_token(TOKEN_IDENTIFIER);
+    if (current.code == TOKEN_LPARENTHESIS) {
+      next_token();
+      lista_expressoes();
+      check_token(TOKEN_RPARENTHESIS);
+    }
   }
-}
 
-void desvio(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_GOTO);
-  check_token(current, TOKEN_NUMBER);
-}
-
-void comando_condicional(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_IF);
-  expressao(current);
-  check_token(current, TOKEN_THEN);
-  comando_sem_rotulo(current);
-  if (current->code == TOKEN_ELSE) {
-    check_token(current, TOKEN_ELSE);
-    comando_sem_rotulo(current);
+  bool isArithmeticOp(TokenCode code) {
+    return code == TOKEN_PLUS || code == TOKEN_MINUS;
   }
-}
 
-void comando_repetitivo(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_WHILE);
-  expressao(current);
-  check_token(current, TOKEN_DO);
-  comando_sem_rotulo(current);
-}
-
-void lista_expressoes(std::vector<token>::iterator &current) {
-  expressao(current);
-  while (current->code == TOKEN_COMMA) {
-    current++;
-    expressao(current);
+  bool isRelacao(TokenCode code) {
+    return code == TOKEN_EQUAL || code == TOKEN_NOTEQUAL ||
+           code == TOKEN_LESSTHAN || code == TOKEN_LESSEQUAL ||
+           code == TOKEN_GREATEREQUAL || code == TOKEN_GREATERTHAN;
   }
-}
 
-void expressao(std::vector<token>::iterator &current) {
-  expressao_simples(current);
-  if (isRelacao(current->code)) {
-    current++;
-    expressao_simples(current);
+  bool isSubrotina(TokenCode code) {
+    return code == TOKEN_PROCEDURE || code == TOKEN_FUNCTION;
   }
-}
-
-void expressao_simples(std::vector<token>::iterator &current) {
-  if (current->code == TOKEN_PLUS || current->code == TOKEN_MINUS)
-    current++;
-  termo(current);
-  while (current->code == TOKEN_PLUS || current->code == TOKEN_MINUS ||
-         current->code == TOKEN_OR) {
-    current++;
-    termo(current);
-  }
-}
-
-void termo(std::vector<token>::iterator &current) {
-  fator(current);
-  while (current->code == TOKEN_ASTERISK || current->code == TOKEN_DIV ||
-         current->code == TOKEN_AND) {
-    current++;
-    fator(current);
-  }
-}
-
-void fator(std::vector<token>::iterator &current) {
-  // como diferenciar chamadas de função?
-  switch (current->code) {
-  case TOKEN_NUMBER:
-    current++;
-    break;
-  case TOKEN_LPARENTHESIS:
-    current++;
-    expressao(current);
-    check_token(current, TOKEN_RPARENTHESIS);
-    break;
-  case TOKEN_NOT:
-    current++;
-    fator(current);
-    break;
-  case TOKEN_IDENTIFIER:
-    // Talvez o erro tenha a ver com isso aqui?
-    if (tabela_simbolos[current->content] == SYMBOLTYPE_VARIABLE)
-      variavel(current);
-    else if (tabela_simbolos[current->content] == SYMBOLTYPE_FUNCTION)
-      chamada_funcao(current);
-    else
-
-      rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
-              current->content);
-    break;
-  default:
-    printTokenDump(current);
-    rejeito("ESPERADO NUMERO, PARENTESE, NOT OU IDENTIFICADOR, RECEBIDO " +
-            current->content);
-    break;
-  }
-}
-
-void variavel(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_IDENTIFIER);
-}
-
-void chamada_funcao(std::vector<token>::iterator &current) {
-  check_token(current, TOKEN_IDENTIFIER);
-  if (current->code == TOKEN_LPARENTHESIS) {
-    current++;
-    lista_expressoes(current);
-    check_token(current, TOKEN_RPARENTHESIS);
-  }
-}
+};
 
 // -- FUNÇÕES DE UTILIDADE --
 std::string read_source_file(std::string file_path) {
@@ -618,62 +609,12 @@ std::string read_source_file(std::string file_path) {
   return source_code;
 }
 
-void rejeito(std::string msg) {
-  std::cout << "Rejeito\n";
-  std::cerr << "Erro: " << msg << '\n';
-  exit(0);
-}
-void printTokenDump(std::vector<token>::iterator &current) {
-  auto temp = current;
-  std::string tokenDump;
-  int i = 0;
-  while (temp->code != TOKEN_EOF && i < TOKENS_TO_DUMP) {
-    tokenDump += temp->content + ", ";
-    i++;
-    temp++;
-  }
-  std::cerr << "TOKEN DUMP: " << tokenDump << "\n";
-}
-
-void check_token(std::vector<token>::iterator &current,
-                 TokenCode expectedToken) {
-  if (current->code != expectedToken) {
-    std::string errorMsg =
-        "Expected token: " + inverseIndex.find(expectedToken)->second +
-        " where " + current->content + " found";
-    printTokenDump(current);
-    rejeito(errorMsg);
-  }
-  current++;
-}
-
-bool isRelacao(TokenCode code) {
-  return code == TOKEN_EQUAL || code == TOKEN_NOTEQUAL ||
-         code == TOKEN_LESSTHAN || code == TOKEN_LESSEQUAL ||
-         code == TOKEN_GREATEREQUAL || code == TOKEN_GREATERTHAN;
-}
-
 int main(int argc, char *argv[]) {
   // argumento 0 é a própia chamada do executável
   std::string file_path(argv[1]);
   std::string source_code = read_source_file(file_path);
-  std::vector<token> tokens = getTokens(source_code);
-  auto it = tokens.begin();
-  programa(it);
-#ifdef DEBUG
-  std::cout << "tokens:\n";
-  for (auto &token : tokens)
-    std::cout << tokenTypeNames[getTokenType(token.code)] << "-"
-              << token.content << "\n";
-  std::cout << "simbolos:\n";
-  for (auto &[nome, tipo] : tabela_simbolos)
-    std::cout << nome << " - " << symbolTypeNames[tipo] << '\n';
-#endif
-  if (it->code == TOKEN_EOF)
-    std::cout << "Aceito\n";
-  else {
-    printTokenDump(it);
-    rejeito("Não se chegou ao final do programa");
-  }
+  Parser p(source_code);
+  p.parse();
+
   return 0;
 }
