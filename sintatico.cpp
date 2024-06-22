@@ -689,7 +689,7 @@ void printTokenDump(std::vector<token>::iterator &current) {
     i++;
     temp++;
   }
-  std::cout << "TOKEN DUMP: " << tokenDump << "\n";
+  std::cerr << "TOKEN DUMP: " << tokenDump << "\n";
 }
 
 void check_token(std::vector<token>::iterator &current,
