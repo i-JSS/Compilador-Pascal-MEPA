@@ -332,8 +332,8 @@ token analisador_lexico(std::string::iterator &prox,
     return {s, simbolos_especiais.find(s)->second};
   }
 
-  if (isalpha(*prox)) {
-    while (prox != end && (isalpha(*prox) || isdigit(*prox))) {
+  if (islower(*prox)) {
+    while (prox != end && (islower(*prox) || isdigit(*prox))) {
       atom.push_back(*prox);
       prox++;
     }
@@ -636,6 +636,7 @@ void fator(std::vector<token>::iterator &current) {
     fator(current);
     break;
   case TOKEN_IDENTIFIER:
+    // Talvez o erro tenha a ver com isso aqui?
     if (tabela_simbolos[current->content] == SYMBOLTYPE_VARIABLE)
       variavel(current);
     else if (tabela_simbolos[current->content] == SYMBOLTYPE_FUNCTION)
