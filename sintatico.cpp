@@ -463,7 +463,8 @@ void declaracao_funcao(std::vector<token>::iterator &current) {
   check_token(current, TOKEN_FUNCTION);
   check_token(current, TOKEN_IDENTIFIER);
   tabela_simbolos[(current - 1)->content] = SYMBOLTYPE_FUNCTION;
-  parametros_formais(current);
+  if (current->code == TOKEN_LPARENTHESIS)
+    parametros_formais(current);
   check_token(current, TOKEN_COLON);
   check_token(current, TOKEN_IDENTIFIER);
   check_token(current, TOKEN_SEMICOLON);
