@@ -334,7 +334,7 @@ private:
                                                     "PROCEDURE", "TYPE"};
   Lexer lexer;
   token current, next;
-  SymbolTable symbolTable;
+  // SymbolTable symbolTable;
 
   void rejeito(std::string msg) {
     std::cout << "Rejeito\n";
@@ -356,31 +356,33 @@ private:
     }
     next_token();
   }
-
-  void declare_identifier(SymbolType type) {
-    if (current.code != TOKEN_IDENTIFIER)
-      rejeito("Expected identifier, got: " + current.content);
-
-    SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
-    if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
-        tryFind.depth == symbolTable.get_depth())
-      rejeito("Identificador " + current.content + " Já declarado em escopo");
-
-    symbolTable.insertSymbol(current.content, type);
-  }
-
-  void declare_label() {
-    if (current.code != TOKEN_NUMBER)
-      rejeito("Expected identifier, got: " + current.content);
-
-    SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
-    if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
-        tryFind.depth == symbolTable.get_depth())
-      rejeito("Identificador " + current.content + " Já declarado em escopo");
-
-    symbolTable.insertSymbol(current.content, SYMBOLTYPE_LABEL);
-  }
-
+  //
+  // void declare_identifier(SymbolType type) {
+  //   if (current.code != TOKEN_IDENTIFIER)
+  //     rejeito("Expected identifier, got: " + current.content);
+  //
+  //   SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
+  //   if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
+  //       tryFind.depth == symbolTable.get_depth())
+  //     rejeito("Identificador " + current.content + " Já declarado em
+  //     escopo");
+  //
+  //   symbolTable.insertSymbol(current.content, type);
+  // }
+  //
+  // void declare_label() {
+  //   if (current.code != TOKEN_NUMBER)
+  //     rejeito("Expected identifier, got: " + current.content);
+  //
+  //   SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
+  //   if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
+  //       tryFind.depth == symbolTable.get_depth())
+  //     rejeito("Identificador " + current.content + " Já declarado em
+  //     escopo");
+  //
+  //   symbolTable.insertSymbol(current.content, SYMBOLTYPE_LABEL);
+  // }
+  //
   void programa() {
     check_token(TOKEN_PROGRAM);
     check_token(TOKEN_IDENTIFIER);
@@ -405,10 +407,12 @@ private:
 
   void parte_declaraco_rotulos() {
     check_token(TOKEN_LABEL);
-    declare_label();
+    // declare_label();
+    check_token(TOKEN_NUMBER);
     while (current.code == TOKEN_COMMA) {
       next_token();
-      declare_label();
+      // declare_label();
+      check_token(TOKEN_NUMBER);
     }
     check_token(TOKEN_SEMICOLON);
   }
@@ -434,11 +438,13 @@ private:
 
   void lista_identificadores(SymbolType type) {
     check_token(TOKEN_IDENTIFIER);
-    declare_identifier(type);
+    // declare_identifier(type);
+    check_token(TOKEN_IDENTIFIER);
     while (current.code == TOKEN_COMMA) {
       next_token();
       check_token(TOKEN_IDENTIFIER);
-      declare_identifier(type);
+      // declare_identifier(type);
+      check_token(TOKEN_IDENTIFIER);
     }
   }
 
@@ -454,26 +460,28 @@ private:
 
   void declaracao_procedimento() {
     check_token(TOKEN_PROCEDURE);
-    declare_identifier(SYMBOLTYPE_PROCEDURE);
+    // declare_identifier(SYMBOLTYPE_PROCEDURE);
+    check_token(TOKEN_IDENTIFIER);
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_SEMICOLON);
-    symbolTable.push_stack();
+    // symbolTable.push_stack();
     bloco();
-    symbolTable.pop_stack();
+    // symbolTable.pop_stack();
   }
 
   void declaracao_funcao() {
     check_token(TOKEN_FUNCTION);
-    declare_identifier(SYMBOLTYPE_FUNCTION);
+    // declare_identifier(SYMBOLTYPE_FUNCTION);
+    check_token(TOKEN_IDENTIFIER);
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_COLON);
     check_token(TOKEN_IDENTIFIER);
     check_token(TOKEN_SEMICOLON);
-    symbolTable.push_stack();
+    // symbolTable.push_stack();
     bloco();
-    symbolTable.pop_stack();
+    // symbolTable.pop_stack();
   }
 
   void parametros_formais() {
@@ -632,14 +640,14 @@ private:
       fator();
       break;
     case TOKEN_IDENTIFIER: {
-      auto result = symbolTable.searchSymbol(current.content);
-      if (result.type == SYMBOLTYPE_VARIABLE)
-        variavel();
-      else if (result.type == SYMBOLTYPE_FUNCTION)
-        chamada_funcao();
-      else
-        rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
-                current.content);
+      // auto result = symbolTable.searchSymbol(current.content);
+      // if (result.type == SYMBOLTYPE_VARIABLE)
+      variavel();
+      // else if (result.type == SYMBOLTYPE_FUNCTION)
+      //   chamada_funcao();
+      // else
+      //   rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
+      //           current.content);
       break;
     }
     default:
