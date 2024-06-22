@@ -1,7 +1,6 @@
 #include <cctype>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -10,19 +9,6 @@
 #define TOKENS_TO_DUMP 10
 
 // -- DEFINIÇõES --
-
-enum TokenType {
-  TOKENTYPE_KEYWORD,
-  TOKENTYPE_IDENTIFIER,
-  TOKENTYPE_NUMBER,
-  TOKENTYPE_OPERATOR,
-  TOKENTYPE_COMPOUND_OPERATOR,
-  TOKENTYPE_DELIMITER,
-  TOKENTYPE_COMMENTS,
-  TOKENTYPE_UNKNOWN,
-  TOKENTYPE_ERROR
-};
-
 enum SymbolType {
   SYMBOLTYPE_VARIABLE,
   SYMBOLTYPE_FUNCTION,
@@ -147,21 +133,15 @@ void rejeito(std::string msg);
 bool isRelacao(TokenCode code);
 
 // -- ANÁLISE LÉXICA
-TokenType getTokenType(TokenCode code);
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end);
 std::vector<token> getTokens(std::string source_code);
-std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens);
 
 // -- FUNÇÕES DE UTILIDADE
 std::string read_source_file(std::string file_path);
 void printTokenDump(std::vector<token>::iterator &current);
 
 // -- CONSTANTES --
-const std::vector<std::string> tokenTypeNames = {
-    "KEYWORD",           "IDENTIFIER", "NUMBER",   "OPERATOR",
-    "COMPOUND OPERATOR", "DELIMITER",  "COMMENTS", "UNKNOWN"};
-
 const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
                                                   "PROCEDURE", "TYPE"};
 const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
@@ -245,51 +225,6 @@ const std::unordered_map<TokenCode, std::string> inverseIndex = {
     {TOKEN_NUMBER, "NUMBER"}};
 
 // -- ANÁLISE LÉXICA --
-
-// -- CONTAGEM DE TIPOS DE TOKEN (DEPRECATED)
-[[deprecated("Não é necessário para questão de análise sintática")]]
-TokenType getTokenType(TokenCode code) {
-  if (code == TOKEN_IDENTIFIER)
-    return TOKENTYPE_IDENTIFIER;
-  if (code == TOKEN_NUMBER)
-    return TOKENTYPE_NUMBER;
-  if (code == TOKEN_COMMENTS)
-    return TOKENTYPE_COMMENTS;
-  if (code == TOKEN_UNKNOWN)
-    return TOKENTYPE_UNKNOWN;
-  if (code == TOKEN_ERROR)
-    return TOKENTYPE_ERROR;
-  if (code >= 400)
-    return TOKENTYPE_KEYWORD;
-  if (code >= 300 && code < 400)
-    return TOKENTYPE_DELIMITER;
-  if (code >= 200 && code < 300)
-    return TOKENTYPE_COMPOUND_OPERATOR;
-  if (code >= 100 && code < 200)
-    return TOKENTYPE_OPERATOR;
-  return TOKENTYPE_UNKNOWN;
-}
-
-[[deprecated("Não é necessário para questão de análise sintática")]]
-std::map<TokenType, int> countTokenTypes(const std::vector<token> &tokens) {
-  std::map<TokenType, int> counts = {{TOKENTYPE_KEYWORD, 0},
-                                     {TOKENTYPE_IDENTIFIER, 0},
-                                     {TOKENTYPE_NUMBER, 0},
-                                     {TOKENTYPE_OPERATOR, 0},
-                                     {TOKENTYPE_COMPOUND_OPERATOR, 0},
-                                     {TOKENTYPE_DELIMITER, 0},
-                                     {TOKENTYPE_COMMENTS, 0},
-                                     {TOKENTYPE_UNKNOWN, 0}};
-  for (const token &t : tokens) {
-    TokenType type = getTokenType(t.code);
-    counts[type]++;
-  }
-  // TIRA O EOF DA CONTAGEM
-  counts[TOKENTYPE_UNKNOWN]--;
-  return counts;
-}
-
-// -- ANÁLISE PROPIAMENTE DITA
 token analisador_lexico(std::string::iterator &prox,
                         const std::string::iterator &end) {
   std::string atom;
