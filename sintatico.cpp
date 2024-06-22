@@ -77,6 +77,7 @@ enum TokenCode {
 struct token {
   std::string content;
   TokenCode code;
+  int line_num;
 };
 
 // -- PROTÓTIPOS DE FUNÇÃO --
@@ -136,6 +137,7 @@ class Lexer {
 private:
   std::string::iterator prox;
   const std::string::iterator end;
+  int current_line = 1;
 
   const std::unordered_map<std::string, TokenCode> simbolos_especiais = {
       {".", TOKEN_PERIOD},       {":", TOKEN_COLON},
@@ -178,8 +180,11 @@ public:
 
   token getNextToken() {
     std::string atom;
-    while (prox != end && isspace(*prox))
+    while (prox != end && isspace(*prox)) {
       prox++;
+      if (*prox == '\n')
+        ++current_line;
+    }
 
     if (prox == end)
       return {"#", TOKEN_EOF};
@@ -206,15 +211,16 @@ public:
         while (temp != end) {
           if ((temp + 1) != end && *temp == '*' && *(temp + 1) == ')') {
             prox = temp + 2;
-            return {s + "*)", TOKEN_COMMENTS}; // EXPLODE COMENTARIO
+            return {s + "*)", TOKEN_COMMENTS,
+                    current_line}; // EXPLODE COMENTARIO
           }
           s.push_back(*temp);
           temp++;
         }
         prox--;
-        return {"(", TOKEN_LPARENTHESIS};
+        return {"(", TOKEN_LPARENTHESIS, current_line};
       }
-      return {s, simbolos_especiais.find(s)->second};
+      return {s, simbolos_especiais.find(s)->second, current_line};
     }
 
     if (islower(*prox)) {
@@ -223,9 +229,9 @@ public:
         prox++;
       }
       if (palavras_chave.find(atom) != palavras_chave.end())
-        return {atom, palavras_chave.find(atom)->second};
+        return {atom, palavras_chave.find(atom)->second, current_line};
       else
-        return {atom, TOKEN_IDENTIFIER};
+        return {atom, TOKEN_IDENTIFIER, current_line};
     }
 
     if (isdigit(*prox)) {
@@ -237,11 +243,11 @@ public:
           rational_part = true;
         atom.push_back(*prox++);
       }
-      return {atom, TOKEN_NUMBER};
+      return {atom, TOKEN_NUMBER, current_line};
     }
 
     prox++;
-    return {s, TOKEN_UNKNOWN};
+    return {s, TOKEN_UNKNOWN, current_line};
   }
 };
 // -- ANÁLISE SINTÁTICA
@@ -330,28 +336,30 @@ public:
   }
 
 private:
-  const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
-                                                    "PROCEDURE", "TYPE"};
+  // const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
+  // "PROCEDURE", "TYPE"};
   Lexer lexer;
   token current, next;
   // SymbolTable symbolTable;
 
   void rejeito(std::string msg) {
     std::cout << "Rejeito\n";
-    std::cerr << "Erro: " << msg << '\n';
+    std::cerr << "Error [" << msg << "] at line " << current.line_num << '\n';
     exit(0);
   }
 
   void next_token() {
-    current = next;
-    next = lexer.getNextToken();
+    do {
+      current = next;
+      next = lexer.getNextToken();
+    } while (current.code == TOKEN_COMMENTS);
   }
 
   void check_token(TokenCode expectedToken) {
     if (current.code != expectedToken) {
-      std::string errorMsg =
-          "Expected token: " + inverseIndex.find(expectedToken)->second +
-          " where " + current.content + " found";
+      std::string errorMsg = "Expected token " +
+                             inverseIndex.find(expectedToken)->second +
+                             " where " + current.content + " found";
       rejeito(errorMsg);
     }
     next_token();
@@ -400,7 +408,7 @@ private:
       parte_declaraco_rotulos();
     if (current.code == TOKEN_VAR)
       parte_declaraco_variaveis();
-    if (current.code == TOKEN_PROCEDURE || current.code == TOKEN_FUNCTION)
+    if (current.code == TOKEN_PROCEDURE /*|| current.code == TOKEN_FUNCTION*/)
       parte_declaracao_subrotinas();
     comando_composto();
   }
@@ -439,12 +447,10 @@ private:
   void lista_identificadores(SymbolType type) {
     check_token(TOKEN_IDENTIFIER);
     // declare_identifier(type);
-    check_token(TOKEN_IDENTIFIER);
     while (current.code == TOKEN_COMMA) {
       next_token();
       check_token(TOKEN_IDENTIFIER);
       // declare_identifier(type);
-      check_token(TOKEN_IDENTIFIER);
     }
   }
 
