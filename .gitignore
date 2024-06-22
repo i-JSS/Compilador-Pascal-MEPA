@@ -5,3 +5,4 @@
 !*.cc
 !*.h 
 !*.c
+!makefile
