@@ -271,7 +271,6 @@ private:
 
 public:
   SymbolTable() {
-    // Inicializar o escopo global
     declaration_stack.push_back(
         std::unordered_map<std::string, SymbolProperties>());
   }
@@ -315,7 +314,8 @@ public:
 class Parser {
 public:
   explicit Parser(std::string &source_code)
-      : lexer(source_code), current(lexer.getNextToken()) {}
+      : lexer(source_code), current(lexer.getNextToken()),
+        next(lexer.getNextToken()) {}
 
   void parse() {
     programa();
@@ -331,13 +331,8 @@ private:
   const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
                                                     "PROCEDURE", "TYPE"};
   Lexer lexer;
-  token current;
-  std::unordered_map<std::string, SymbolType> tabela_simbolos;
-
-  void insertSymbol(SymbolType type) {
-    std::string symbol = current.content;
-    tabela_simbolos.insert(std::make_pair(symbol, type));
-  }
+  token current, next;
+  SymbolTable symbolTable;
 
   void rejeito(std::string msg) {
     std::cout << "Rejeito\n";
@@ -345,7 +340,10 @@ private:
     exit(0);
   }
 
-  void next_token() { current = lexer.getNextToken(); }
+  void next_token() {
+    current = next;
+    next = lexer.getNextToken();
+  }
 
   void check_token(TokenCode expectedToken) {
     if (current.code != expectedToken) {
@@ -396,16 +394,14 @@ private:
     tipo();
   }
 
-  // Refatorar declaracao de variavieis
   void parte_declaraco_variaveis() {
-    // check_token(TOKEN_VAR);
-    // declaracao_variaveis();
-    // while (current.code == TOKEN_SEMICOLON &&
-    //        (current + 1)->code == TOKEN_IDENTIFIER) {
-    //   next_token();
-    //   declaracao_variaveis();
-    // }
-    // check_token(TOKEN_SEMICOLON);
+    check_token(TOKEN_VAR);
+    declaracao_variaveis();
+    while (current.code == TOKEN_SEMICOLON && next.code == TOKEN_IDENTIFIER) {
+      next_token();
+      declaracao_variaveis();
+    }
+    check_token(TOKEN_SEMICOLON);
   }
 
   void lista_identificadores() {
@@ -430,8 +426,9 @@ private:
 
   void declaracao_procedimento() {
     check_token(TOKEN_PROCEDURE);
-    check_token(TOKEN_IDENTIFIER);
-    insertSymbol(SYMBOLTYPE_PROCEDURE);
+    if (current.code != TOKEN_IDENTIFIER)
+      rejeito("Procedimento sem identificador");
+    symbolTable.insertSymbol(current.content, SYMBOLTYPE_PROCEDURE);
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_SEMICOLON);
