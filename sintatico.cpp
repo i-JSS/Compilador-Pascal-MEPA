@@ -256,6 +256,7 @@ enum SymbolType {
   SYMBOLTYPE_PARAMETER,
   SYMBOLTYPE_CONSTANT,
   SYMBOLTYPE_NOTFOUND,
+  SYMBOLTYPE_LABEL,
 };
 
 struct SymbolProperties {
@@ -311,6 +312,7 @@ public:
   }
 };
 
+// Nessa casa não fazemos checagem de tipo
 class Parser {
 public:
   explicit Parser(std::string &source_code)
@@ -355,11 +357,36 @@ private:
     next_token();
   }
 
+  void declare_identifier(SymbolType type) {
+    if (current.code != TOKEN_IDENTIFIER)
+      rejeito("Expected identifier, got: " + current.content);
+
+    SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
+    if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
+        tryFind.depth == symbolTable.get_depth())
+      rejeito("Identificador " + current.content + " Já declarado em escopo");
+
+    symbolTable.insertSymbol(current.content, type);
+  }
+
+  void declare_label() {
+    if (current.code != TOKEN_NUMBER)
+      rejeito("Expected identifier, got: " + current.content);
+
+    SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
+    if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
+        tryFind.depth == symbolTable.get_depth())
+      rejeito("Identificador " + current.content + " Já declarado em escopo");
+
+    symbolTable.insertSymbol(current.content, SYMBOLTYPE_LABEL);
+  }
+
   void programa() {
     check_token(TOKEN_PROGRAM);
     check_token(TOKEN_IDENTIFIER);
     check_token(TOKEN_LPARENTHESIS);
-    lista_identificadores();
+    // Parâmetro mesmo?
+    lista_identificadores(SYMBOLTYPE_PARAMETER);
     check_token(TOKEN_RPARENTHESIS);
     check_token(TOKEN_SEMICOLON);
     bloco();
@@ -378,10 +405,10 @@ private:
 
   void parte_declaraco_rotulos() {
     check_token(TOKEN_LABEL);
-    check_token(TOKEN_NUMBER);
+    declare_label();
     while (current.code == TOKEN_COMMA) {
       next_token();
-      check_token(TOKEN_NUMBER);
+      declare_label();
     }
     check_token(TOKEN_SEMICOLON);
   }
@@ -389,7 +416,7 @@ private:
   void tipo() { check_token(TOKEN_IDENTIFIER); }
 
   void declaracao_variaveis() {
-    lista_identificadores();
+    lista_identificadores(SYMBOLTYPE_VARIABLE);
     check_token(TOKEN_COLON);
     tipo();
   }
@@ -397,6 +424,7 @@ private:
   void parte_declaraco_variaveis() {
     check_token(TOKEN_VAR);
     declaracao_variaveis();
+    // Refatorar isso aqui pode dar erro
     while (current.code == TOKEN_SEMICOLON && next.code == TOKEN_IDENTIFIER) {
       next_token();
       declaracao_variaveis();
@@ -404,13 +432,13 @@ private:
     check_token(TOKEN_SEMICOLON);
   }
 
-  void lista_identificadores() {
+  void lista_identificadores(SymbolType type) {
     check_token(TOKEN_IDENTIFIER);
-    insertSymbol(SYMBOLTYPE_VARIABLE);
+    declare_identifier(type);
     while (current.code == TOKEN_COMMA) {
       next_token();
       check_token(TOKEN_IDENTIFIER);
-      insertSymbol(SYMBOLTYPE_VARIABLE);
+      declare_identifier(type);
     }
   }
 
@@ -426,25 +454,26 @@ private:
 
   void declaracao_procedimento() {
     check_token(TOKEN_PROCEDURE);
-    if (current.code != TOKEN_IDENTIFIER)
-      rejeito("Procedimento sem identificador");
-    symbolTable.insertSymbol(current.content, SYMBOLTYPE_PROCEDURE);
+    declare_identifier(SYMBOLTYPE_PROCEDURE);
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_SEMICOLON);
+    symbolTable.push_stack();
     bloco();
+    symbolTable.pop_stack();
   }
 
   void declaracao_funcao() {
     check_token(TOKEN_FUNCTION);
-    check_token(TOKEN_IDENTIFIER);
-    insertSymbol(SYMBOLTYPE_FUNCTION);
+    declare_identifier(SYMBOLTYPE_FUNCTION);
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_COLON);
     check_token(TOKEN_IDENTIFIER);
     check_token(TOKEN_SEMICOLON);
+    symbolTable.push_stack();
     bloco();
+    symbolTable.pop_stack();
   }
 
   void parametros_formais() {
@@ -460,10 +489,9 @@ private:
   void secao_parametros_formais() {
     if (current.code == TOKEN_VAR)
       check_token(TOKEN_VAR);
-    lista_identificadores();
+    lista_identificadores(SYMBOLTYPE_PARAMETER);
     check_token(TOKEN_COLON);
-    check_token(TOKEN_IDENTIFIER);
-    insertSymbol(SYMBOLTYPE_FUNCTION);
+    check_token(TOKEN_IDENTIFIER); // Não vamos fazer checagem de tipo aqui
   }
 
   void comando_composto() {
@@ -485,36 +513,34 @@ private:
   }
 
   void comando_sem_rotulo() {
-    // switch (current.code) {
-    // case TOKEN_IF:
-    //   comando_condicional();
-    //   break;
-    // case TOKEN_WHILE:
-    //   comando_repetitivo();
-    //   break;
-    // case TOKEN_BEGIN:
-    //   comando_composto();
-    //   break;
-    // case TOKEN_GOTO:
-    //   desvio();
-    //   break;
-    // // Tabela de símbolos aqui!
-    // case TOKEN_IDENTIFIER:
-    //   switch ((current + 1)->code) {
-    //   case TOKEN_ASSIGNMENT:
-    //     atribuicao();
-    //     break;
-    //   default:
-    //     chamada_procedimento();
-    //     break;
-    //   }
-    //   break;
-    // default:
-    //   rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR RECEBIDO: "
-    //   +
-    //           current.content);
-    //   break;
-    // }
+    switch (current.code) {
+    case TOKEN_IF:
+      comando_condicional();
+      break;
+    case TOKEN_WHILE:
+      comando_repetitivo();
+      break;
+    case TOKEN_BEGIN:
+      comando_composto();
+      break;
+    case TOKEN_GOTO:
+      desvio();
+      break;
+    case TOKEN_IDENTIFIER:
+      switch (next.code) {
+      case TOKEN_ASSIGNMENT:
+        atribuicao();
+        break;
+      default:
+        chamada_procedimento();
+        break;
+      }
+      break;
+    default:
+      rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR RECEBIDO: " +
+              current.content);
+      break;
+    }
   }
 
   void atribuicao() {
@@ -605,17 +631,17 @@ private:
       next_token();
       fator();
       break;
-    case TOKEN_IDENTIFIER:
-      // Talvez o erro tenha a ver com isso aqui?
-      if (tabela_simbolos[current.content] == SYMBOLTYPE_VARIABLE)
+    case TOKEN_IDENTIFIER: {
+      auto result = symbolTable.searchSymbol(current.content);
+      if (result.type == SYMBOLTYPE_VARIABLE)
         variavel();
-      else if (tabela_simbolos[current.content] == SYMBOLTYPE_FUNCTION)
+      else if (result.type == SYMBOLTYPE_FUNCTION)
         chamada_funcao();
       else
-
         rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
                 current.content);
       break;
+    }
     default:
       rejeito("ESPERADO NUMERO, PARENTESE, NOT OU IDENTIFICADOR, RECEBIDO " +
               current.content);
