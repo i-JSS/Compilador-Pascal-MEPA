@@ -177,9 +177,9 @@ public:
   token getNextToken() {
     std::string atom;
     while (prox != end && isspace(*prox)) {
-      prox++;
       if (*prox == '\n')
         ++current_line;
+      prox++;
     }
 
     if (prox == end)
