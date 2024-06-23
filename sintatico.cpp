@@ -7,10 +7,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#define TOKENS_TO_DUMP 10
 
 // -- DEFINIÇõES --
-
 enum TokenCode {
   // Tokens especiais:
   TOKEN_EMPTY = 0,  // 0 - (Empty token)
@@ -81,13 +79,10 @@ struct token {
 };
 
 // -- PROTÓTIPOS DE FUNÇÃO --
-
-// -- FUNÇÕES DE UTILIDADE
 std::string read_source_file(std::string file_path);
 void printTokenDump(std::vector<token>::iterator &current);
 
 // -- CONSTANTES --
-
 const std::unordered_map<TokenCode, std::string> inverseIndex = {
     {TOKEN_PERIOD, "."},
     {TOKEN_COLON, ":"},
@@ -319,6 +314,9 @@ public:
 };
 
 // Nessa casa não fazemos checagem de tipo
+// TODO: se só houverem os tipos integer e boolean
+// acho q é possível declarar eles ao iniciar o compilador
+// talvez devamos fazer o mesmo para read e write
 class Parser {
 public:
   explicit Parser(std::string &source_code)
@@ -331,7 +329,7 @@ public:
       std::cout << "Aceito\n";
       exit(0);
     } else {
-      rejeito("Não se chegou ao final do programa");
+      rejeito("EOF not found");
     }
   }
 
@@ -344,7 +342,7 @@ private:
 
   void rejeito(std::string msg) {
     std::cout << "Rejeito\n";
-    std::cerr << "Error [" << msg << "] at line " << current.line_num << '\n';
+    std::cerr << "Error [" << msg << "] at line " << current.line_num << ".\n";
     exit(0);
   }
 
@@ -359,7 +357,7 @@ private:
     if (current.code != expectedToken) {
       std::string errorMsg = "Expected token " +
                              inverseIndex.find(expectedToken)->second +
-                             " where " + current.content + " found";
+                             ". got " + current.content;
       rejeito(errorMsg);
     }
     next_token();
@@ -551,8 +549,9 @@ private:
       }
       break;
     default:
-      rejeito("ESPERADO IF, WHILE, BEGIN, GOTO, OU IDENTIFICADOR RECEBIDO: " +
-              current.content);
+      rejeito(
+          "Expected token if, while, begin, goto, variable or procedure. got " +
+          current.content);
       break;
     }
   }
@@ -652,12 +651,12 @@ private:
       // else if (result.type == SYMBOLTYPE_FUNCTION)
       //   chamada_funcao();
       // else
-      //   rejeito("ESPERADO VARIÁVEL OU CHAMADA DE FUNÇÃO, RECEBIDO: " +
+      //   rejeito("Expected variable or function call. got" +
       //           current.content);
       break;
     }
     default:
-      rejeito("ESPERADO NUMERO, PARENTESE, NOT OU IDENTIFICADOR, RECEBIDO " +
+      rejeito("Expected number, (, not, variable or function call. got " +
               current.content);
       break;
     }
@@ -693,7 +692,7 @@ private:
 std::string read_source_file(std::string file_path) {
   std::ifstream file(file_path);
   if (!file.is_open()) {
-    std::cerr << "Erro awo abrir arquivo: " << file_path << std::endl;
+    std::cerr << "Error while opening file " << file_path << std::endl;
     exit(1);
   }
   std::string buffer;
