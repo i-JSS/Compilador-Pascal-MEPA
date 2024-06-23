@@ -1,4 +1,5 @@
 #include <cctype>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -325,10 +326,7 @@ public:
 
   void parse() {
     programa();
-    if (current.code == TOKEN_EOF) {
-      std::cout << "Aceito\n";
-      exit(0);
-    } else {
+    if (current.code != TOKEN_EOF) {
       rejeito("EOF not found");
     }
   }
@@ -341,9 +339,9 @@ private:
   // SymbolTable symbolTable;
 
   void rejeito(std::string msg) {
-    std::cout << "Rejeito\n";
-    std::cerr << "Error [" << msg << "] at line " << current.line_num << ".\n";
-    exit(0);
+    std::string line_msg =
+        msg + ", at line " + std::to_string(current.line_num);
+    throw std::runtime_error(line_msg);
   }
 
   void next_token() {
@@ -355,9 +353,9 @@ private:
 
   void check_token(TokenCode expectedToken) {
     if (current.code != expectedToken) {
-      std::string errorMsg = "Expected token " +
+      std::string errorMsg = "Expected token { " +
                              inverseIndex.find(expectedToken)->second +
-                             ". got " + current.content;
+                             " }. got " + current.content;
       rejeito(errorMsg);
     }
     next_token();
@@ -692,8 +690,7 @@ private:
 std::string read_source_file(std::string file_path) {
   std::ifstream file(file_path);
   if (!file.is_open()) {
-    std::cerr << "Error while opening file " << file_path << std::endl;
-    exit(1);
+    throw std::runtime_error("Error while opening file " + file_path);
   }
   std::string buffer;
   std::string source_code;
@@ -706,10 +703,25 @@ std::string read_source_file(std::string file_path) {
 
 int main(int argc, char *argv[]) {
   // argumento 0 é a própia chamada do executável
-  std::string file_path(argv[1]);
-  std::string source_code = read_source_file(file_path);
-  Parser p(source_code);
-  p.parse();
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << "<source_file>" << std::endl;
+    return 1;
+  }
 
+  std::vector<std::string> file_paths;
+  for (int i = 1; i < argc; i++)
+    file_paths.push_back(argv[i]);
+
+  for (const auto &file_path : file_paths) {
+    std::string source_code = read_source_file(file_path);
+    Parser p(source_code);
+    try {
+      p.parse();
+      std::cout << "Aceito\n";
+    } catch (std::exception &e) {
+      std::cout << "Rejeito\n";
+      std::cerr << e.what() << '\n';
+    }
+  }
   return 0;
 }
