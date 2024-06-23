@@ -182,7 +182,7 @@ public:
     }
 
     if (prox == end)
-      return {"#", TOKEN_EOF};
+      return {"#", TOKEN_EOF, current_line};
 
     std::string s(1, *prox);
     if (simbolos_especiais.find(s) != simbolos_especiais.end()) {
