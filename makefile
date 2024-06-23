@@ -1,4 +1,3 @@
-
 # Makefile for compiling sintatico.cpp with and without debug mode
 
 # Compiler and flags
@@ -12,19 +11,26 @@ DEBUG_FLAG = -DDEBUG -ggdb3
 SRC = sintatico.cpp
 EXE = sintatico
 
-# Debug and release targets
-debug: $(EXE)_debug
+# Output directory
+OUT_DIR = out
 
-release: $(EXE)
+# Ensure the output directory exists
+$(OUT_DIR):
+	mkdir -p $(OUT_DIR)
+
+# Debug and release targets
+debug: $(OUT_DIR)/$(EXE)_debug
+
+release: $(OUT_DIR)/$(EXE)
 
 # Executable with debug mode
-$(EXE)_debug: $(SRC)
+$(OUT_DIR)/$(EXE)_debug: $(SRC) | $(OUT_DIR)
 	$(CXX) $(CXXFLAGS) $(DEBUG_FLAG) $< -o $@ -MMD -MP
 
 # Executable without debug mode
-$(EXE): $(SRC)
+$(OUT_DIR)/$(EXE): $(SRC) | $(OUT_DIR)
 	$(CXX) $(CXXFLAGS) $< -o $@ -MMD -MP
 
 # Clean target
 clean:
-	rm -f $(EXE) $(EXE)_debug
+	rm -f $(OUT_DIR)/$(EXE) $(OUT_DIR)/$(EXE)_debug
