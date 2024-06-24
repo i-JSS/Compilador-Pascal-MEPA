@@ -6,3 +6,4 @@
 !*.h 
 !*.c
 !makefile
+!test.sh
