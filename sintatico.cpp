@@ -2,7 +2,6 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
-#include <locale>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -10,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-// -- DEFINIÇõES --
 enum TokenCode {
   // Tokens especiais:
   TOKEN_EMPTY = 0,  // 0 - (Empty token)
@@ -247,9 +245,6 @@ public:
     return {s, TOKEN_UNKNOWN, current_line};
   }
 };
-// -- ANÁLISE SINTÁTICA
-
-// Tabela de símbolos
 
 enum SymbolType {
   SYMBOLTYPE_VARIABLE,
@@ -259,11 +254,11 @@ enum SymbolType {
   SYMBOLTYPE_CONSTANT,
   SYMBOLTYPE_FUNCTION,
   SYMBOLTYPE_PARAMETER,
-  SYMBOLTYPE_RETURN,
   SYMBOLTYPE_LABEL,
   SYMBOLTYPE_NOTFOUND,
 };
 
+// TODO: adicionar propiedades diferentes dependendo do tipo de símbolo
 struct SymbolProperties {
   SymbolType type;
   int depth;
@@ -317,7 +312,6 @@ public:
   }
 };
 
-// Nessa casa não fazemos checagem de tipo
 class Parser {
 public:
   explicit Parser(std::string &source_code)
@@ -367,39 +361,41 @@ private:
     }
     next_token();
   }
-  //
-  // void declare_identifier(SymbolType type) {
-  //   if (current.code != TOKEN_IDENTIFIER)
-  //     rejeito("Expected identifier, got: " + current.content);
-  //
-  //   SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
-  //   if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
-  //       tryFind.depth == symbolTable.get_depth())
-  //     rejeito("Identificador " + current.content + " Já declarado em
-  //     escopo");
-  //
-  //   symbolTable.insertSymbol(current.content, type);
-  // }
-  //
-  // void declare_label() {
-  //   if (current.code != TOKEN_NUMBER)
-  //     rejeito("Expected identifier, got: " + current.content);
-  //
-  //   SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
-  //   if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
-  //       tryFind.depth == symbolTable.get_depth())
-  //     rejeito("Identificador " + current.content + " Já declarado em
-  //     escopo");
-  //
-  //   symbolTable.insertSymbol(current.content, SYMBOLTYPE_LABEL);
-  // }
-  //
+
+  void check_symbol(SymbolType type) {
+    TokenCode expectedCode =
+        type == SYMBOLTYPE_LABEL ? TOKEN_NUMBER : TOKEN_IDENTIFIER;
+    if (current.code != expectedCode)
+      rejeito("Expected symbol, got: " + current.content);
+
+    SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
+    if (tryFind.type == SYMBOLTYPE_NOTFOUND)
+      rejeito("Symbol " + current.content + " Already declared in this scope");
+    if (tryFind.type != type)
+      rejeito("Symbol " + current.content + " not of expected type");
+
+    symbolTable.insertSymbol(current.content, type);
+  }
+
+  void declare_symbol(SymbolType type) {
+    TokenCode expectedCode =
+        type == SYMBOLTYPE_LABEL ? TOKEN_NUMBER : TOKEN_IDENTIFIER;
+    if (current.code != expectedCode)
+      rejeito("Expected symbol, got: " + current.content);
+
+    SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
+    if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
+        tryFind.depth == symbolTable.get_depth())
+      rejeito("Symbol " + current.content + " Already declared in this scope");
+
+    symbolTable.insertSymbol(current.content, type);
+  }
+
   void programa() {
     check_token(TOKEN_PROGRAM);
     check_token(TOKEN_IDENTIFIER);
     check_token(TOKEN_LPARENTHESIS);
-    // Parâmetro mesmo?
-    lista_identificadores(SYMBOLTYPE_PARAMETER);
+    lista_identificadores(SYMBOLTYPE_VARIABLE);
     check_token(TOKEN_RPARENTHESIS);
     check_token(TOKEN_SEMICOLON);
     bloco();
@@ -411,7 +407,7 @@ private:
       parte_declaraco_rotulos();
     if (current.code == TOKEN_VAR)
       parte_declaraco_variaveis();
-    if (current.code == TOKEN_PROCEDURE /*|| current.code == TOKEN_FUNCTION*/)
+    if (current.code == TOKEN_PROCEDURE)
       parte_declaracao_subrotinas();
     comando_composto();
   }
@@ -439,7 +435,6 @@ private:
   void parte_declaraco_variaveis() {
     check_token(TOKEN_VAR);
     declaracao_variaveis();
-    // Refatorar isso aqui pode dar erro
     while (current.code == TOKEN_SEMICOLON && next.code == TOKEN_IDENTIFIER) {
       next_token();
       declaracao_variaveis();
@@ -449,11 +444,9 @@ private:
 
   void lista_identificadores(SymbolType type) {
     check_token(TOKEN_IDENTIFIER);
-    // declare_identifier(type);
     while (current.code == TOKEN_COMMA) {
       next_token();
       check_token(TOKEN_IDENTIFIER);
-      // declare_identifier(type);
     }
   }
 
@@ -469,28 +462,22 @@ private:
 
   void declaracao_procedimento() {
     check_token(TOKEN_PROCEDURE);
-    // declare_identifier(SYMBOLTYPE_PROCEDURE);
     check_token(TOKEN_IDENTIFIER);
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_SEMICOLON);
-    // symbolTable.push_stack();
     bloco();
-    // symbolTable.pop_stack();
   }
 
   void declaracao_funcao() {
     check_token(TOKEN_FUNCTION);
-    // declare_identifier(SYMBOLTYPE_FUNCTION);
     check_token(TOKEN_IDENTIFIER);
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_COLON);
     check_token(TOKEN_IDENTIFIER);
     check_token(TOKEN_SEMICOLON);
-    // symbolTable.push_stack();
     bloco();
-    // symbolTable.pop_stack();
   }
 
   void parametros_formais() {
@@ -508,7 +495,7 @@ private:
       check_token(TOKEN_VAR);
     lista_identificadores(SYMBOLTYPE_PARAMETER);
     check_token(TOKEN_COLON);
-    check_token(TOKEN_IDENTIFIER); // Não vamos fazer checagem de tipo aqui
+    check_token(TOKEN_IDENTIFIER);
   }
 
   void comando_composto() {
@@ -635,7 +622,6 @@ private:
   }
 
   void fator() {
-    // refatorar tabela de símbolos
     switch (current.code) {
     case TOKEN_NUMBER:
       next_token();
@@ -650,14 +636,7 @@ private:
       fator();
       break;
     case TOKEN_IDENTIFIER: {
-      // auto result = symbolTable.searchSymbol(current.content);
-      // if (result.type == SYMBOLTYPE_VARIABLE)
       variavel();
-      // else if (result.type == SYMBOLTYPE_FUNCTION)
-      //   chamada_funcao();
-      // else
-      //   rejeito("Expected variable or function call. got" +
-      //           current.content);
       break;
     }
     default:
@@ -709,7 +688,6 @@ std::string read_source_file(std::string file_path) {
 }
 
 int main(int argc, char *argv[]) {
-  // argumento 0 é a própia chamada do executável
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << "<source_file>" << std::endl;
     return 1;
