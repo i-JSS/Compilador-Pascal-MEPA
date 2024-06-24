@@ -2,6 +2,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -252,13 +253,15 @@ public:
 
 enum SymbolType {
   SYMBOLTYPE_VARIABLE,
-  SYMBOLTYPE_FUNCTION,
-  SYMBOLTYPE_PROCEDURE,
   SYMBOLTYPE_TYPE,
-  SYMBOLTYPE_PARAMETER,
+  SYMBOLTYPE_PROCEDURE,
+  SYMBOLTYPE_PROGRAM,
   SYMBOLTYPE_CONSTANT,
-  SYMBOLTYPE_NOTFOUND,
+  SYMBOLTYPE_FUNCTION,
+  SYMBOLTYPE_PARAMETER,
+  SYMBOLTYPE_RETURN,
   SYMBOLTYPE_LABEL,
+  SYMBOLTYPE_NOTFOUND,
 };
 
 struct SymbolProperties {
@@ -305,24 +308,24 @@ public:
     return {SYMBOLTYPE_NOTFOUND, -1};
   }
 
-  void insertSymbol(std::string &identifier, SymbolType type) {
+  void insertSymbol(const std::string &identifier, SymbolType type) {
     declaration_stack[current_depth][identifier] = {type, current_depth};
   }
 
-  void deleteSymbol(std::string &identifier) {
+  void deleteSymbol(const std::string &identifier) {
     declaration_stack[current_depth].erase(identifier);
   }
 };
 
 // Nessa casa não fazemos checagem de tipo
-// TODO: se só houverem os tipos integer e boolean
-// acho q é possível declarar eles ao iniciar o compilador
-// talvez devamos fazer o mesmo para read e write
 class Parser {
 public:
   explicit Parser(std::string &source_code)
       : lexer(source_code), current(lexer.getNextToken()),
-        next(lexer.getNextToken()) {}
+        next(lexer.getNextToken()) {
+    for (auto &symbol : preDeclaredSymbols)
+      symbolTable.insertSymbol(symbol.first, symbol.second);
+  }
 
   void parse() {
     programa();
@@ -332,11 +335,15 @@ public:
   }
 
 private:
-  // const std::vector<std::string> symbolTypeNames = {"VARIABLE", "FUNCTION",
-  // "PROCEDURE", "TYPE"};
+  // map pode ter melhor uso de memória
+  const std::unordered_map<std::string, SymbolType> preDeclaredSymbols = {
+      {"input", SYMBOLTYPE_VARIABLE}, {"output", SYMBOLTYPE_VARIABLE},
+      {"integer", SYMBOLTYPE_TYPE},   {"boolean", SYMBOLTYPE_TYPE},
+      {"read", SYMBOLTYPE_PROCEDURE}, {"write", SYMBOLTYPE_PROCEDURE},
+      {"true", SYMBOLTYPE_CONSTANT},  {"false", SYMBOLTYPE_CONSTANT}};
   Lexer lexer;
   token current, next;
-  // SymbolTable symbolTable;
+  SymbolTable symbolTable;
 
   void rejeito(std::string msg) {
     std::string line_msg =
