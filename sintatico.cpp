@@ -492,8 +492,7 @@ private:
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_COLON);
-    // Isso aqui não seria um tipo n? na gramática só tá identificador
-    check_token(TOKEN_IDENTIFIER);
+    tipo(); // Não se se aqui seria um tipo ou identificador qualquer
     check_token(TOKEN_SEMICOLON);
     bloco();
     symbolTable.pop_stack();
@@ -514,8 +513,8 @@ private:
       check_token(TOKEN_VAR);
     lista_identificadores(SYMBOLTYPE_VARIABLE);
     check_token(TOKEN_COLON);
-    // aqui também seria tipo methinks
-    check_token(TOKEN_IDENTIFIER);
+    // aqui não se se seria tipo mesmo
+    tipo();
   }
 
   void comando_composto() {
