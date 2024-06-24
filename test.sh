@@ -6,14 +6,15 @@ if ! make release; then
 fi
 
 
+executavel="sintatico"
 echo "Running tests"
 echo "-------------------------------------"
-for test_file in ./tests/sintatico/*.in; do
+for test_file in ./tests/"$executavel"/*.in; do
     base_name=$(basename "$test_file" .in)
-    expected_output_file="./tests/sintatico/$base_name.out"
+    expected_output_file="./tests/$executavel/$base_name.out"
     echo "Running test: $base_name"
 
-    time_taken=$( { time ./out/sintatico "$test_file" >./temp 2>./temp-error ; } 2>&1 )
+    time_taken=$( { time ./out/$executavel "$test_file" >./temp 2>./temp-error ; } 2>&1 )
 
     error=$(<./temp-error)
 
