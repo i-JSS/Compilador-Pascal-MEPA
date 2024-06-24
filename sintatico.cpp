@@ -2,6 +2,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -511,7 +512,8 @@ private:
   void secao_parametros_formais() {
     if (current.code == TOKEN_VAR)
       check_token(TOKEN_VAR);
-    lista_identificadores(SYMBOLTYPE_VARIABLE);
+    // TODO: ajeitar atribuição de parâmetros e outros piriris
+    lista_identificadores(SYMBOLTYPE_PARAMETER);
     check_token(TOKEN_COLON);
     // aqui não se se seria tipo mesmo
     tipo();
@@ -658,10 +660,11 @@ private:
       auto type = check_symbol_type();
       if (type == SYMBOLTYPE_FUNCTION)
         chamada_funcao();
-      else if (type == SYMBOLTYPE_VARIABLE)
+      else if (type == SYMBOLTYPE_VARIABLE || type == SYMBOLTYPE_PARAMETER)
         variavel();
       else
-        rejeito("Expected variable or function call. got " + current.content);
+        rejeito("Expected variable, parameter or function call. got " +
+                current.content);
       break;
     }
     default:
@@ -671,7 +674,12 @@ private:
     }
   }
 
-  void variavel() { check_symbol(SYMBOLTYPE_VARIABLE); }
+  void variavel() {
+    auto type = check_symbol_type();
+    if (type != SYMBOLTYPE_VARIABLE && type != SYMBOLTYPE_PARAMETER)
+      rejeito("Expected variable or parameter. got " + current.content);
+    next_token();
+  }
 
   void chamada_funcao() {
     check_symbol(SYMBOLTYPE_FUNCTION);
