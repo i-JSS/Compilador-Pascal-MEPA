@@ -379,7 +379,7 @@ private:
 
     SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
     if (tryFind.type == SYMBOLTYPE_NOTFOUND)
-      rejeito("Symbol " + current.content + " Already declared in this scope");
+      rejeito("Symbol " + current.content + " not found in this scope");
     if (tryFind.type != type)
       rejeito("Symbol " + current.content + " not of expected type");
 
