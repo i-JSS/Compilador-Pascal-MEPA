@@ -264,6 +264,7 @@ struct SymbolProperties {
   int depth;
 };
 
+// Como lidar com símbolos de mesmo nome e tipos diferentes?
 class SymbolTable {
 private:
   std::vector<std::unordered_map<std::string, SymbolProperties>>
@@ -362,6 +363,14 @@ private:
     next_token();
   }
 
+  SymbolType check_symbol_type() {
+    SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
+    if (tryFind.type == SYMBOLTYPE_NOTFOUND)
+      rejeito("Symbol " + current.content + " not found in this sccope");
+
+    return tryFind.type;
+  }
+
   void check_symbol(SymbolType type) {
     TokenCode expectedCode =
         type == SYMBOLTYPE_LABEL ? TOKEN_NUMBER : TOKEN_IDENTIFIER;
@@ -374,7 +383,7 @@ private:
     if (tryFind.type != type)
       rejeito("Symbol " + current.content + " not of expected type");
 
-    symbolTable.insertSymbol(current.content, type);
+    next_token();
   }
 
   void declare_symbol(SymbolType type) {
@@ -386,16 +395,17 @@ private:
     SymbolProperties tryFind = symbolTable.searchSymbol(current.content);
     if (tryFind.type != SYMBOLTYPE_NOTFOUND &&
         tryFind.depth == symbolTable.get_depth())
-      rejeito("Symbol " + current.content + " Already declared in this scope");
+      rejeito("Symbol " + current.content + " not found in this scope");
 
     symbolTable.insertSymbol(current.content, type);
+    next_token();
   }
 
   void programa() {
     check_token(TOKEN_PROGRAM);
-    check_token(TOKEN_IDENTIFIER);
+    declare_symbol(SYMBOLTYPE_PROGRAM);
     check_token(TOKEN_LPARENTHESIS);
-    lista_identificadores(SYMBOLTYPE_VARIABLE);
+    lista_identificadores(SYMBOLTYPE_VARIABLE, false);
     check_token(TOKEN_RPARENTHESIS);
     check_token(TOKEN_SEMICOLON);
     bloco();
@@ -414,17 +424,15 @@ private:
 
   void parte_declaraco_rotulos() {
     check_token(TOKEN_LABEL);
-    // declare_label();
-    check_token(TOKEN_NUMBER);
+    declare_symbol(SYMBOLTYPE_LABEL);
     while (current.code == TOKEN_COMMA) {
       next_token();
-      // declare_label();
-      check_token(TOKEN_NUMBER);
+      declare_symbol(SYMBOLTYPE_LABEL);
     }
     check_token(TOKEN_SEMICOLON);
   }
 
-  void tipo() { check_token(TOKEN_IDENTIFIER); }
+  void tipo() { check_symbol(SYMBOLTYPE_TYPE); }
 
   void declaracao_variaveis() {
     lista_identificadores(SYMBOLTYPE_VARIABLE);
@@ -442,11 +450,17 @@ private:
     check_token(TOKEN_SEMICOLON);
   }
 
-  void lista_identificadores(SymbolType type) {
-    check_token(TOKEN_IDENTIFIER);
+  void lista_identificadores(SymbolType type, bool declaration = true) {
+    if (declaration)
+      declare_symbol(type);
+    else
+      check_symbol(type);
     while (current.code == TOKEN_COMMA) {
       next_token();
-      check_token(TOKEN_IDENTIFIER);
+      if (declaration)
+        declare_symbol(type);
+      else
+        check_symbol(type);
     }
   }
 
@@ -462,22 +476,27 @@ private:
 
   void declaracao_procedimento() {
     check_token(TOKEN_PROCEDURE);
-    check_token(TOKEN_IDENTIFIER);
+    declare_symbol(SYMBOLTYPE_PROCEDURE);
+    symbolTable.push_stack();
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_SEMICOLON);
     bloco();
+    symbolTable.pop_stack();
   }
 
   void declaracao_funcao() {
     check_token(TOKEN_FUNCTION);
-    check_token(TOKEN_IDENTIFIER);
+    declare_symbol(SYMBOLTYPE_FUNCTION);
+    symbolTable.push_stack();
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_COLON);
+    // Isso aqui não seria um tipo n? na gramática só tá identificador
     check_token(TOKEN_IDENTIFIER);
     check_token(TOKEN_SEMICOLON);
     bloco();
+    symbolTable.pop_stack();
   }
 
   void parametros_formais() {
@@ -493,8 +512,9 @@ private:
   void secao_parametros_formais() {
     if (current.code == TOKEN_VAR)
       check_token(TOKEN_VAR);
-    lista_identificadores(SYMBOLTYPE_PARAMETER);
+    lista_identificadores(SYMBOLTYPE_VARIABLE);
     check_token(TOKEN_COLON);
+    // aqui também seria tipo methinks
     check_token(TOKEN_IDENTIFIER);
   }
 
@@ -555,7 +575,7 @@ private:
   }
 
   void chamada_procedimento() {
-    check_token(TOKEN_IDENTIFIER);
+    check_symbol(SYMBOLTYPE_PROCEDURE);
     if (current.code == TOKEN_LPARENTHESIS) {
       check_token(TOKEN_LPARENTHESIS);
       lista_expressoes();
@@ -636,7 +656,13 @@ private:
       fator();
       break;
     case TOKEN_IDENTIFIER: {
-      variavel();
+      auto type = check_symbol_type();
+      if (type == SYMBOLTYPE_FUNCTION)
+        chamada_funcao();
+      else if (type == SYMBOLTYPE_VARIABLE)
+        variavel();
+      else
+        rejeito("Expected variable or function call. got " + current.content);
       break;
     }
     default:
@@ -646,10 +672,10 @@ private:
     }
   }
 
-  void variavel() { check_token(TOKEN_IDENTIFIER); }
+  void variavel() { check_symbol(SYMBOLTYPE_VARIABLE); }
 
   void chamada_funcao() {
-    check_token(TOKEN_IDENTIFIER);
+    check_symbol(SYMBOLTYPE_FUNCTION);
     if (current.code == TOKEN_LPARENTHESIS) {
       next_token();
       lista_expressoes();
