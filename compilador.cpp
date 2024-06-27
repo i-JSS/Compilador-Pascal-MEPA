@@ -654,7 +654,7 @@ private:
       check_token(TOKEN_DO);
       GERA("DSVF", {}, fimWhile);
       comando_sem_rotulo();
-      GERA(fimWhile, {}, "NADA");
+      GERA(fimWhile+':', {}, "NADA");
   }
 
   void lista_expressoes() {
