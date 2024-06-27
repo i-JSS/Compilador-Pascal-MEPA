@@ -342,9 +342,18 @@ private:
       {"integer", SYMBOLTYPE_TYPE},   {"boolean", SYMBOLTYPE_TYPE},
       {"read", SYMBOLTYPE_PROCEDURE}, {"write", SYMBOLTYPE_PROCEDURE},
       {"true", SYMBOLTYPE_CONSTANT},  {"false", SYMBOLTYPE_CONSTANT}};
+  // I = IF  |  P = PROCEDURE  |  W = WHILE  |  E = ELSE / ELSEIF
+  std::unordered_map<char, int> labels = {
+      {'I', 0}, {'P', 0}, {'W', 0}, {'E', 0}};
   Lexer lexer;
   token current, next;
   SymbolTable symbolTable;
+
+  std::string GERALABEL(char chave){
+    if (labels.find(chave) != labels.end())
+       return chave + std::to_string(labels[chave]++);
+    return "";
+  }
 
   void GERA(std::string linha, const std::vector<int> &params,
             std::string jump = "") {
@@ -354,7 +363,7 @@ private:
         if (i < params.size() - 1)
           linha += ",";
       }
-    linha += " " + jump + "\t\t\n";
+    linha += " " + jump + ";\t\t\n";
     CodigoMepa += linha;
   }
 
@@ -563,8 +572,6 @@ private:
     switch (current.code) {
     case TOKEN_IF:
       comando_condicional();
-      // TODO CRIAR CODIGO DE GERAR LABELS
-      GERA("DSVF", {}, "L1");
       break;
     case TOKEN_WHILE:
       comando_repetitivo();
@@ -621,12 +628,22 @@ private:
   void comando_condicional() {
     check_token(TOKEN_IF);
     expressao();
+    std::string ifLabel = GERALABEL('I'),
+                elseLabel = GERALABEL('E'),
+                fimLabel = elseLabel;
+    GERA("DSVF", {}, ifLabel);
+    GERA("DSVS", {}, elseLabel);
     check_token(TOKEN_THEN);
+    GERA(ifLabel+':', {}, "NADA");
     comando_sem_rotulo();
     if (current.code == TOKEN_ELSE) {
+      fimLabel = GERALABEL('E');
+      GERA("DSVS", {}, fimLabel);
+      GERA(elseLabel+':', {}, "NADA");
       check_token(TOKEN_ELSE);
       comando_sem_rotulo();
     }
+    GERA(fimLabel+':', {}, "NADA");
   }
 
   void comando_repetitivo() {
