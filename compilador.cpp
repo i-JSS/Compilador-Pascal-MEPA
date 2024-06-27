@@ -647,10 +647,14 @@ private:
   }
 
   void comando_repetitivo() {
-    check_token(TOKEN_WHILE);
-    expressao();
-    check_token(TOKEN_DO);
-    comando_sem_rotulo();
+      check_token(TOKEN_WHILE);
+      GERA(GERALABEL('W')+':', {}, "NADA");
+      std::string fimWhile = GERALABEL('W');
+      expressao();
+      check_token(TOKEN_DO);
+      GERA("DSVF", {}, fimWhile);
+      comando_sem_rotulo();
+      GERA(fimWhile, {}, "NADA");
   }
 
   void lista_expressoes() {
