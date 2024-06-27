@@ -610,7 +610,8 @@ private:
 
   void chamada_procedimento() {
     check_symbol(SYMBOLTYPE_PROCEDURE);
-
+    // TODO CONSEGUIR O NUMERO DO PROCEDIMENTO E O NUMERO DO CONTEXTO ATUAL
+    GERA("CHPR P2, 0", {});
     if (current.code == TOKEN_LPARENTHESIS) {
       check_token(TOKEN_LPARENTHESIS);
       lista_expressoes();
@@ -623,6 +624,8 @@ private:
   void desvio() {
     check_token(TOKEN_GOTO);
     check_token(TOKEN_NUMBER);
+    // TODO PEGAR O NUMERO DO TOKEN NUMBER
+    // GERA("DSVS", {}, TOKEN_NUMBER.NUMBER);
   }
 
   void comando_condicional() {
@@ -647,14 +650,16 @@ private:
   }
 
   void comando_repetitivo() {
-      check_token(TOKEN_WHILE);
-      GERA(GERALABEL('W')+':', {}, "NADA");
-      std::string fimWhile = GERALABEL('W');
-      expressao();
-      check_token(TOKEN_DO);
-      GERA("DSVF", {}, fimWhile);
-      comando_sem_rotulo();
-      GERA(fimWhile+':', {}, "NADA");
+    check_token(TOKEN_WHILE);
+    std::string inicioWhile = GERALABEL('W'),
+                fimWhile = GERALABEL('W');
+    GERA(inicioWhile+':', {}, "NADA");
+    expressao();
+    check_token(TOKEN_DO);
+    GERA("DSVF", {}, fimWhile);
+    comando_sem_rotulo();
+    GERA("DSVS", {}, inicioWhile);
+    GERA(fimWhile+':', {}, "NADA");
   }
 
   void lista_expressoes() {
