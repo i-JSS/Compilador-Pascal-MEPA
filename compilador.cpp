@@ -345,15 +345,28 @@ private:
   // I = IF  |  P = PROCEDURE  |  W = WHILE  |  E = ELSE / ELSEIF
   std::unordered_map<char, int> labels = {
       {'I', 0}, {'P', 0}, {'W', 0}, {'E', 0}};
+  std::unordered_map<std::string, std::string> proceduresLabel = {
+          {"read", "LEIT"}, {"write", "IMPR"}
+  };
+
   Lexer lexer;
   token current, next;
   SymbolTable symbolTable;
+  int contexto = 0;
 
   std::string GERALABEL(char chave){
     if (labels.find(chave) != labels.end())
        return chave + std::to_string(labels[chave]++);
     return "";
   }
+
+  void GERAPROGRAM(const std::string& key, const std::string& value){
+      proceduresLabel[key] = value;
+  }
+
+    std::string GETPROGRAMNAME(const std::string& key) {
+        return proceduresLabel.at(key);
+    }
 
   void GERA(std::string linha, const std::vector<int> &params,
             std::string jump = "") {
@@ -444,13 +457,18 @@ private:
   void bloco() {
     if (current.code == TOKEN_LABEL)
       parte_declaraco_rotulos();
+
     if (current.code == TOKEN_VAR) {
       parte_declaraco_variaveis();
       GERA("ARMZ", {static_cast<int>(symbolTable.size())});
     }
 
-    if (current.code == TOKEN_PROCEDURE)
-      parte_declaracao_subrotinas();
+    std::string programLabel = GERALABEL('P');
+    GERA("DSVS", {}, programLabel);
+
+    if (current.code == TOKEN_PROCEDURE) parte_declaracao_subrotinas();
+
+    GERA(programLabel+':', {}, "NADA");
     comando_composto();
   }
 
@@ -508,12 +526,18 @@ private:
 
   void declaracao_procedimento() {
     check_token(TOKEN_PROCEDURE);
+    int contextoAtual = contexto;
+    std::string comandoInicio = "ENPR " + std::to_string(++contexto),
+                nomePrograma = GERALABEL('P');
+    GERA(nomePrograma+':', {}, comandoInicio);
+    GERAPROGRAM(current.content, nomePrograma);
     declare_symbol(SYMBOLTYPE_PROCEDURE);
     symbolTable.push_stack();
     if (current.code == TOKEN_LPARENTHESIS)
       parametros_formais();
     check_token(TOKEN_SEMICOLON);
     bloco();
+    GERA("RTPR", {contexto--, contextoAtual});
     symbolTable.pop_stack();
   }
 
@@ -609,15 +633,17 @@ private:
   }
 
   void chamada_procedimento() {
+    std::string funcaoNome = GETPROGRAMNAME(current.content);
     check_symbol(SYMBOLTYPE_PROCEDURE);
-    // TODO CONSEGUIR O NUMERO DO PROCEDIMENTO E O NUMERO DO CONTEXTO ATUAL
-    GERA("CHPR P2, 0", {});
     if (current.code == TOKEN_LPARENTHESIS) {
       check_token(TOKEN_LPARENTHESIS);
       lista_expressoes();
       check_token(TOKEN_RPARENTHESIS);
-      // TODO CONSEGUIR O CODIGO DO PARAMETRO
-      // GERA("CRVL", {0, 0});
+    }
+    if(funcaoNome == "LEIT" || funcaoNome == "IMPR") GERA(funcaoNome, {});
+    else {
+      std::string chamaProcedure = "CHPR " + funcaoNome + ',';
+      GERA(chamaProcedure, {contexto});
     }
   }
 
