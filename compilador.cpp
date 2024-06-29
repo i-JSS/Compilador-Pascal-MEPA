@@ -314,7 +314,6 @@ public:
         declaration_stack[current_depth].erase(identifier);
     }
 
-    size_t size() const { return declaration_stack.size(); }
 };
 
 class Parser {
@@ -377,6 +376,13 @@ private:
 
     std::pair<int, int> GETVARIAVELDATA(const std::string& key){
         return variaveis.at(key);
+    }
+
+    int CONTAVARIAVEIS(int contextoAtual) {
+        int contador = 0;
+        for (auto& variavel : variaveis)
+            if (variavel.second.second == contextoAtual) contador++;
+        return contador;
     }
 
     void GERA(const std::string& linha, const std::vector<int>& params, const std::string& jump = "") {
@@ -465,6 +471,8 @@ private:
         GERA("INPP", {});
         bloco();
         check_token(TOKEN_PERIOD);
+        if(CONTAVARIAVEIS(contexto))
+            GERA("DMEM", {CONTAVARIAVEIS(contexto)});
     }
 
     //OK
@@ -513,23 +521,19 @@ private:
     }
 
     void lista_identificadores(SymbolType type, bool declaration = true) {
-
         if (declaration){
             GERAVARIAVEL(current.content);
             declare_symbol(type);
         }
-        else
-            check_symbol(type);
+        else check_symbol(type);
         while (current.code == TOKEN_COMMA) {
             next_token();
-
             if (declaration){
                 GERAVARIAVEL(current.content);
                 declare_symbol(type);
             }
             else check_symbol(type);
         }
-
     }
 
     void parte_declaracao_subrotinas() {
@@ -557,8 +561,7 @@ private:
             parametros_formais();
         check_token(TOKEN_SEMICOLON);
         bloco();
-        // TODO PEGAR AS VARIAVEIS USADAS
-//    GERA("DMEM", {contadorVariaveis});
+        GERA("DMEM", {CONTAVARIAVEIS(contexto)});
         GERA("RTPR", {contexto--, contextoAtual});
         symbolTable.pop_stack();
     }
@@ -606,6 +609,7 @@ private:
         check_token(TOKEN_END);
     }
 
+    // OK
     void comando() {
         if (current.code == TOKEN_NUMBER) {
             GERA(current.content+':', {}, "NADA");
@@ -679,6 +683,7 @@ private:
         }
     }
 
+    // OK
     void desvio() {
         check_token(TOKEN_GOTO);
         GERA("DSVS", {}, current.content);
@@ -740,15 +745,8 @@ private:
     }
 
     void expressao_simples() {
-
         if (isArithmeticOp(current.code))
             next_token();
-
-        if(current.code != TOKEN_NUMBER){
-            std::pair<int, int> codigoVariavel = GETVARIAVELDATA(current.content);
-            GERA("CRVL", {codigoVariavel.second, codigoVariavel.first});
-        }
-
         termo();
         while (isArithmeticOp(current.code) || current.code == TOKEN_OR) {
             std::string codeOperacao = getTokenNameOperacao(current.code);
@@ -812,12 +810,11 @@ private:
         auto type = check_symbol_type();
         if (type != SYMBOLTYPE_VARIABLE && type != SYMBOLTYPE_PARAMETER)
             rejeito("Expected variable or parameter. got " + current.content);
-
-//      std::pair<int, int> codigo = GETVARIAVELDATA(current.content);
-//      GERA("CRVL", {codigo.second, codigo.first});
+        if(next.code!=TOKEN_ASSIGNMENT){
+            std::pair<int, int> codigo = GETVARIAVELDATA(current.content);
+            GERA("CRVL", {codigo.second, codigo.first});
+        }
         next_token();
-        // TODO CONSEGUIR O CODIGO DA VARIAVEL NA TABELA DE SIMBOLOS
-        // GERA("CRVL", {0, 0});
     }
 
     void chamada_funcao() {
