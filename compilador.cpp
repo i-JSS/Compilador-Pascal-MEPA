@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <sstream>
 
 enum TokenCode {
   // Tokens especiais:
@@ -348,11 +349,13 @@ private:
   std::unordered_map<std::string, std::string> proceduresLabel = {
           {"read", "LEIT"}, {"write", "IMPR"}
   };
+  // NOME VARIAVEL, CODIGO DELA E CONTEXTO INSERIDO
+  std::unordered_map<std::string, std::pair<int, int>> variaveis;
 
   Lexer lexer;
   token current, next;
   SymbolTable symbolTable;
-  int contexto = 0;
+  int contexto = 0, contadorVariaveis = 0;
 
   std::string GERALABEL(char chave){
     if (labels.find(chave) != labels.end())
@@ -364,21 +367,32 @@ private:
       proceduresLabel[key] = value;
   }
 
-    std::string GETPROGRAMNAME(const std::string& key) {
-        return proceduresLabel.at(key);
-    }
-
-  void GERA(std::string linha, const std::vector<int> &params,
-            std::string jump = "") {
-    if (!params.empty())
-      for (size_t i = 0; i < params.size(); ++i) {
-        linha += " " + std::to_string(params[i]);
-        if (i < params.size() - 1)
-          linha += ",";
-      }
-    linha += " " + jump + ";\t\t\n";
-    CodigoMepa += linha;
+  std::string GETPROGRAMNAME(const std::string& key) {
+     return proceduresLabel.at(key);
   }
+
+  void GERAVARIAVEL(const std::string& value){
+      variaveis[value] = {contadorVariaveis++, contexto};
+  }
+
+  std::pair<int, int> GETVARIAVELDATA(const std::string& key){
+      return variaveis.at(key);
+  }
+
+    void GERA(const std::string& linha, const std::vector<int>& params, const std::string& jump = "") {
+        std::ostringstream oss;
+        oss << linha;
+        if (!params.empty()) {
+            oss << " " << params[0];
+            for (size_t i = 1; i < params.size(); ++i) {
+                oss << ", " << params[i];
+            }
+        }
+        if (!jump.empty()) oss << " " << jump;
+        oss << " ;\n";
+
+        std::cout << oss.str() ;
+    }
 
   void rejeito(std::string msg) {
     std::string line_msg =
@@ -451,23 +465,18 @@ private:
     GERA("INPP", {});
     bloco();
     check_token(TOKEN_PERIOD);
-    GERA("PARA", {});
   }
 
+  //OK
   void bloco() {
     if (current.code == TOKEN_LABEL)
       parte_declaraco_rotulos();
-
     if (current.code == TOKEN_VAR) {
       parte_declaraco_variaveis();
-      GERA("ARMZ", {static_cast<int>(symbolTable.size())});
     }
-
     std::string programLabel = GERALABEL('P');
     GERA("DSVS", {}, programLabel);
-
     if (current.code == TOKEN_PROCEDURE) parte_declaracao_subrotinas();
-
     GERA(programLabel+':', {}, "NADA");
     comando_composto();
   }
@@ -484,12 +493,14 @@ private:
 
   void tipo() { check_symbol(SYMBOLTYPE_TYPE); }
 
+  //OK
   void declaracao_variaveis() {
     lista_identificadores(SYMBOLTYPE_VARIABLE);
     check_token(TOKEN_COLON);
     tipo();
   }
 
+  // OK
   void parte_declaraco_variaveis() {
     check_token(TOKEN_VAR);
     declaracao_variaveis();
@@ -498,20 +509,27 @@ private:
       declaracao_variaveis();
     }
     check_token(TOKEN_SEMICOLON);
+    if(contadorVariaveis)GERA("AMEM", {contadorVariaveis});
   }
 
   void lista_identificadores(SymbolType type, bool declaration = true) {
-    if (declaration)
-      declare_symbol(type);
+
+    if (declaration){
+        GERAVARIAVEL(current.content);
+        declare_symbol(type);
+    }
     else
       check_symbol(type);
     while (current.code == TOKEN_COMMA) {
-      next_token();
-      if (declaration)
-        declare_symbol(type);
-      else
-        check_symbol(type);
+        next_token();
+
+        if (declaration){
+            GERAVARIAVEL(current.content);
+            declare_symbol(type);
+        }
+      else check_symbol(type);
     }
+
   }
 
   void parte_declaracao_subrotinas() {
@@ -524,8 +542,10 @@ private:
     }
   }
 
+  // OK
   void declaracao_procedimento() {
     check_token(TOKEN_PROCEDURE);
+    contadorVariaveis = 0;
     int contextoAtual = contexto;
     std::string comandoInicio = "ENPR " + std::to_string(++contexto),
                 nomePrograma = GERALABEL('P');
@@ -537,6 +557,8 @@ private:
       parametros_formais();
     check_token(TOKEN_SEMICOLON);
     bloco();
+    // TODO PEGAR AS VARIAVEIS USADAS
+//    GERA("DMEM", {contadorVariaveis});
     GERA("RTPR", {contexto--, contextoAtual});
     symbolTable.pop_stack();
   }
@@ -624,23 +646,32 @@ private:
     }
   }
 
+  // OK
   void atribuicao() {
+    std::pair<int, int> codigo = GETVARIAVELDATA(current.content);
     variavel();
     check_token(TOKEN_ASSIGNMENT);
     expressao();
-    // TODO ADICIONAR BUSCA POR IDENTIFICADOR NO 2 PARAMETRO
-    GERA("ARMZ", {0, 0});
+    GERA("ARMZ", {codigo.second, codigo.first});
   }
 
+  // OK
   void chamada_procedimento() {
     std::string funcaoNome = GETPROGRAMNAME(current.content);
     check_symbol(SYMBOLTYPE_PROCEDURE);
+    std::pair<int, int> codigoParametro;
     if (current.code == TOKEN_LPARENTHESIS) {
       check_token(TOKEN_LPARENTHESIS);
-      lista_expressoes();
+      codigoParametro = GETVARIAVELDATA(current.content);
+      if(funcaoNome != "LEIT") lista_expressoes();
+      else next_token();
       check_token(TOKEN_RPARENTHESIS);
     }
-    if(funcaoNome == "LEIT" || funcaoNome == "IMPR") GERA(funcaoNome, {});
+    if(funcaoNome == "LEIT") {
+        GERA(funcaoNome, {});
+        GERA("ARMZ", {codigoParametro.second, codigoParametro.first});
+    }
+    else if(funcaoNome == "IMPR") GERA(funcaoNome, {});
     else {
       std::string chamaProcedure = "CHPR " + funcaoNome + ',';
       GERA(chamaProcedure, {contexto});
@@ -654,6 +685,7 @@ private:
     // GERA("DSVS", {}, TOKEN_NUMBER.NUMBER);
   }
 
+  // OK
   void comando_condicional() {
     check_token(TOKEN_IF);
     expressao();
@@ -675,6 +707,7 @@ private:
     GERA(fimLabel+':', {}, "NADA");
   }
 
+  // OK
   void comando_repetitivo() {
     check_token(TOKEN_WHILE);
     std::string inicioWhile = GERALABEL('W'),
@@ -689,7 +722,7 @@ private:
   }
 
   void lista_expressoes() {
-    expressao();
+      expressao();
     while (current.code == TOKEN_COMMA) {
       next_token();
       expressao();
@@ -707,8 +740,14 @@ private:
   }
 
   void expressao_simples() {
+
     if (isArithmeticOp(current.code))
-      next_token();
+        next_token();
+
+    if(current.code != TOKEN_NUMBER){
+        std::pair<int, int> codigoVariavel = GETVARIAVELDATA(current.content);
+        GERA("CRVL", {codigoVariavel.second, codigoVariavel.first});
+    }
 
     termo();
     while (isArithmeticOp(current.code) || current.code == TOKEN_OR) {
@@ -733,9 +772,8 @@ private:
   void fator() {
     switch (current.code) {
     case TOKEN_NUMBER:
+      GERA("CRCT "+ current.content, {});
       next_token();
-      // TODO CONSEGUIR O NUMERO DO TOKEN_NUMBER
-      // GERA("CTCR", {0});
       break;
     case TOKEN_LPARENTHESIS:
       next_token();
@@ -751,7 +789,6 @@ private:
     case TOKEN_IDENTIFIER: {
       auto type = check_symbol_type();
       if (type == SYMBOLTYPE_FUNCTION) {
-        printf("FUNCAO");
         chamada_funcao();
       }
 
@@ -775,7 +812,10 @@ private:
     auto type = check_symbol_type();
     if (type != SYMBOLTYPE_VARIABLE && type != SYMBOLTYPE_PARAMETER)
       rejeito("Expected variable or parameter. got " + current.content);
-    next_token();
+
+//      std::pair<int, int> codigo = GETVARIAVELDATA(current.content);
+//      GERA("CRVL", {codigo.second, codigo.first});
+      next_token();
     // TODO CONSEGUIR O CODIGO DA VARIAVEL NA TABELA DE SIMBOLOS
     // GERA("CRVL", {0, 0});
   }
@@ -870,9 +910,9 @@ int main(int argc, char *argv[]) {
     Parser p(source_code);
     try {
       std::string CodigoMepa = p.parse();
-      std::cout << CodigoMepa;
+      std::cout << "PARA ; Aceito\n";
     } catch (std::exception &e) {
-      std::cout << "Rejeito\n";
+      std::cout << "PARA ; Rejeito\n";
       std::cerr << e.what() << '\n';
     }
   }
