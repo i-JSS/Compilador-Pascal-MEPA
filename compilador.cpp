@@ -176,6 +176,7 @@ public:
             : prox(source_code.begin()), end(source_code.end()) {}
 
     token getNextToken() {
+        inicio:
         std::string atom;
         while (prox != end && isspace(*prox)) {
             if (*prox == '\n')
@@ -204,18 +205,13 @@ public:
             } else if (s == "(" && *prox == '*') {
                 s = "(*";
                 prox++;
-                auto temp = prox;
-                while (temp != end) {
-                    if ((temp + 1) != end && *temp == '*' && *(temp + 1) == ')') {
-                        prox = temp + 2;
-                        return {s + "*)", TOKEN_COMMENTS,
-                                current_line}; // EXPLODE COMENTARIO
+                while (prox != end) {
+                    if ((prox + 1) != end && *prox == '*' && *(prox + 1) == ')') {
+                        prox = prox + 2;
+                        goto inicio;
                     }
-                    s.push_back(*temp);
-                    temp++;
+                    prox++;
                 }
-                prox--;
-                return {"(", TOKEN_LPARENTHESIS, current_line};
             }
             return {s, simbolos_especiais.find(s)->second, current_line};
         }
@@ -697,10 +693,10 @@ private:
         std::string ifLabel = GERALABEL('I'),
                 elseLabel = GERALABEL('E'),
                 fimLabel = elseLabel;
-        GERA("DSVF", {}, ifLabel);
-        GERA("DSVS", {}, elseLabel);
+        GERA("DSVF", {}, elseLabel);
+//        GERA("DSVS", {}, elseLabel);
         check_token(TOKEN_THEN);
-        GERA(ifLabel+':', {}, "NADA");
+//        GERA(ifLabel+':', {}, "NADA");
         comando_sem_rotulo();
         if (current.code == TOKEN_ELSE) {
             fimLabel = GERALABEL('E');
