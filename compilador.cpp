@@ -667,7 +667,7 @@ private:
         std::pair<int, int> codigoParametro;
         if (current.code == TOKEN_LPARENTHESIS) {
             check_token(TOKEN_LPARENTHESIS);
-            codigoParametro = GETVARIAVELDATA(current.content);
+            if(current.code!=TOKEN_NUMBER) codigoParametro = GETVARIAVELDATA(current.content);
             if(funcaoNome != "LEIT") lista_expressoes();
             else next_token();
             check_token(TOKEN_RPARENTHESIS);
@@ -747,6 +747,7 @@ private:
     void expressao_simples() {
         if (isArithmeticOp(current.code))
             next_token();
+
         termo();
         while (isArithmeticOp(current.code) || current.code == TOKEN_OR) {
             std::string codeOperacao = getTokenNameOperacao(current.code);
