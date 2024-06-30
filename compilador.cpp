@@ -467,8 +467,6 @@ private:
         GERA("INPP", {});
         bloco();
         check_token(TOKEN_PERIOD);
-        if(CONTAVARIAVEIS(contexto))
-            GERA("DMEM", {CONTAVARIAVEIS(contexto)});
     }
 
     //OK
@@ -694,9 +692,7 @@ private:
                 elseLabel = GERALABEL('E'),
                 fimLabel = elseLabel;
         GERA("DSVF", {}, elseLabel);
-//        GERA("DSVS", {}, elseLabel);
         check_token(TOKEN_THEN);
-//        GERA(ifLabel+':', {}, "NADA");
         comando_sem_rotulo();
         if (current.code == TOKEN_ELSE) {
             fimLabel = GERALABEL('E');
@@ -741,10 +737,13 @@ private:
     }
 
     void expressao_simples() {
+        // COMECA COM -1]
+        bool inverte = false;
+        if(current.code == TOKEN_MINUS) inverte = true;
         if (isArithmeticOp(current.code))
             next_token();
-
         termo();
+        if(inverte) GERA("INVR", {});
         while (isArithmeticOp(current.code) || current.code == TOKEN_OR) {
             std::string codeOperacao = getTokenNameOperacao(current.code);
             next_token();
@@ -776,10 +775,9 @@ private:
                 check_token(TOKEN_RPARENTHESIS);
                 break;
             case TOKEN_NOT:
+                // ok, nao tem not no codigo
                 next_token();
                 fator();
-                // TODO TRATAR A ORDEM DA NEGACAO
-                GERA("NEGA", {});
                 break;
             case TOKEN_IDENTIFIER: {
                 auto type = check_symbol_type();
@@ -787,7 +785,7 @@ private:
                     chamada_funcao();
                 }
 
-                else if (type == SYMBOLTYPE_VARIABLE || type == SYMBOLTYPE_PARAMETER) {
+                else if (type == SYMBOLTYPE_VARIABLE || type == SYMBOLTYPE_PARAMETER ) {
                     variavel();
                 }
 
@@ -834,6 +832,7 @@ private:
     }
 
     std::string getTokenNameRelacao(TokenCode code) {
+
         switch (code) {
             case TOKEN_EQUAL:
                 return "CMIG";
@@ -848,11 +847,13 @@ private:
             case TOKEN_GREATERTHAN:
                 return "CMMA";
         }
+
         return "";
     }
 
     std::string getTokenNameOperacao(TokenCode code) {
         switch (code) {
+            // existe or ou and?
             case TOKEN_OR:
                 return "SOMA";
             case TOKEN_AND:
