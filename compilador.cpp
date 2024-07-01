@@ -351,6 +351,7 @@ private:
     token current, next;
     SymbolTable symbolTable;
     int contexto = 0, contadorVariaveis = 0;
+    bool temArgumento = false;
 
     std::string GERALABEL(char chave){
         if (labels.find(chave) != labels.end())
@@ -366,8 +367,11 @@ private:
         return proceduresLabel.at(key);
     }
 
-    void GERAVARIAVEL(const std::string& value){
-        variaveis[value] = {contadorVariaveis++, contexto};
+    void GERAVARIAVEL(const std::string& value, int parametro = 0) {
+        if (variaveis.find(value) == variaveis.end())
+            if(parametro == 0)
+                variaveis[value] = {contadorVariaveis++, contexto};
+            else variaveis[value] = {parametro, contexto};
     }
 
     std::pair<int, int> GETVARIAVELDATA(const std::string& key){
@@ -377,7 +381,7 @@ private:
     int CONTAVARIAVEIS(int contextoAtual) {
         int contador = 0;
         for (auto& variavel : variaveis)
-            if (variavel.second.second == contextoAtual) contador++;
+            if (variavel.second.second == contextoAtual && variavel.second.first != -4) contador++;
         return contador;
     }
 
@@ -567,7 +571,10 @@ private:
         bloco();
         GERA("DMEM", {CONTAVARIAVEIS(contexto)});
         REMOVEVARIAVEIS(contexto);
-        GERA("RTPR", {contexto--, contextoAtual});
+        if(temArgumento)
+            GERA("RTPR", {contexto--, 1});
+        else GERA("RTPR", {contexto--, 0});
+        temArgumento = false;
         symbolTable.pop_stack();
     }
 
@@ -586,6 +593,9 @@ private:
 
     void parametros_formais() {
         check_token(TOKEN_LPARENTHESIS);
+//        printf("\n=>%s\n", current.content.c_str());
+        GERAVARIAVEL(current.content, -4);
+        temArgumento = true;
         secao_parametros_formais();
         while (current.code == TOKEN_SEMICOLON) {
             next_token();
