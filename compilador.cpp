@@ -483,7 +483,6 @@ private:
         check_token(TOKEN_PERIOD);
     }
 
-    //OK
     void bloco() {
         if (current.code == TOKEN_LABEL)
             parte_declaraco_rotulos();
@@ -509,14 +508,12 @@ private:
 
     void tipo() { check_symbol(SYMBOLTYPE_TYPE); }
 
-    //OK
     void declaracao_variaveis() {
         lista_identificadores(SYMBOLTYPE_VARIABLE);
         check_token(TOKEN_COLON);
         tipo();
     }
 
-    // OK
     void parte_declaraco_variaveis() {
         check_token(TOKEN_VAR);
         declaracao_variaveis();
@@ -554,7 +551,6 @@ private:
         }
     }
 
-    // OK
     void declaracao_procedimento() {
         check_token(TOKEN_PROCEDURE);
         contadorVariaveis = 0;
@@ -593,7 +589,6 @@ private:
 
     void parametros_formais() {
         check_token(TOKEN_LPARENTHESIS);
-//        printf("\n=>%s\n", current.content.c_str());
         GERAVARIAVEL(current.content, -4);
         temArgumento = true;
         secao_parametros_formais();
@@ -607,10 +602,8 @@ private:
     void secao_parametros_formais() {
         if (current.code == TOKEN_VAR)
             check_token(TOKEN_VAR);
-        // TODO: ajeitar atribuição de parâmetros e outros piriris
         lista_identificadores(SYMBOLTYPE_PARAMETER);
         check_token(TOKEN_COLON);
-        // aqui não se se seria tipo mesmo
         tipo();
     }
 
@@ -624,7 +617,6 @@ private:
         check_token(TOKEN_END);
     }
 
-    // OK
     void comando() {
         if (current.code == TOKEN_NUMBER) {
             GERA(current.content+':', {}, "NADA");
@@ -666,7 +658,6 @@ private:
         }
     }
 
-    // OK
     void atribuicao() {
         std::pair<int, int> codigo = GETVARIAVELDATA(current.content);
         variavel();
@@ -675,7 +666,6 @@ private:
         GERA("ARMZ", {codigo.second, codigo.first});
     }
 
-    // OK
     void chamada_procedimento() {
         std::string funcaoNome = GETPROGRAMNAME(current.content);
         check_symbol(SYMBOLTYPE_PROCEDURE);
@@ -698,14 +688,12 @@ private:
         }
     }
 
-    // OK
     void desvio() {
         check_token(TOKEN_GOTO);
         GERA("DSVS", {}, current.content);
         check_token(TOKEN_NUMBER);
     }
 
-    // OK
     void comando_condicional() {
         check_token(TOKEN_IF);
         expressao();
@@ -725,7 +713,6 @@ private:
         GERA(fimLabel+':', {}, "NADA");
     }
 
-    // OK
     void comando_repetitivo() {
         check_token(TOKEN_WHILE);
         std::string inicioWhile = GERALABEL('W'),
@@ -758,7 +745,6 @@ private:
     }
 
     void expressao_simples() {
-        // COMECA COM -1]
         bool inverte = false;
         if(current.code == TOKEN_MINUS) inverte = true;
         if (isArithmeticOp(current.code))
@@ -876,7 +862,6 @@ private:
             case TOKEN_GREATERTHAN:
                 return "CMMA";
         }
-
         return "";
     }
 
