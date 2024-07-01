@@ -381,6 +381,16 @@ private:
         return contador;
     }
 
+    void REMOVEVARIAVEIS(int contextoAtual) {
+        for (auto it = variaveis.begin(); it != variaveis.end(); ) {
+            if (it->second.second == contextoAtual) {
+                it = variaveis.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     void GERA(const std::string& linha, const std::vector<int>& params, const std::string& jump = "") {
         std::ostringstream oss;
         oss << linha;
@@ -556,6 +566,7 @@ private:
         check_token(TOKEN_SEMICOLON);
         bloco();
         GERA("DMEM", {CONTAVARIAVEIS(contexto)});
+        REMOVEVARIAVEIS(contexto);
         GERA("RTPR", {contexto--, contextoAtual});
         symbolTable.pop_stack();
     }
