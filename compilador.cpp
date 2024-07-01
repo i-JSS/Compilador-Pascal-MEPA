@@ -743,7 +743,10 @@ private:
         if (isArithmeticOp(current.code))
             next_token();
         termo();
-        if(inverte) GERA("INVR", {});
+        if(inverte) {
+            GERA("INVR", {});
+            inverte = false;
+        }
         while (isArithmeticOp(current.code) || current.code == TOKEN_OR) {
             std::string codeOperacao = getTokenNameOperacao(current.code);
             next_token();
@@ -778,6 +781,11 @@ private:
                 // ok, nao tem not no codigo
                 next_token();
                 fator();
+                break;
+            case TOKEN_MINUS:
+                next_token();
+                fator();
+                GERA("INVR", {});
                 break;
             case TOKEN_IDENTIFIER: {
                 auto type = check_symbol_type();
