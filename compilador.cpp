@@ -489,10 +489,12 @@ private:
         if (current.code == TOKEN_VAR) {
             parte_declaraco_variaveis();
         }
-        std::string programLabel = GERALABEL('P');
-        GERA("DSVS", {}, programLabel);
-        if (current.code == TOKEN_PROCEDURE) parte_declaracao_subrotinas();
-        GERA(programLabel+':', {}, "NADA");
+        if (current.code == TOKEN_PROCEDURE) {
+            std::string programLabel = GERALABEL('P');
+            GERA("DSVS", {}, programLabel);
+            parte_declaracao_subrotinas();
+            GERA(programLabel+':', {}, "NADA");
+        }
         comando_composto();
     }
 
@@ -785,7 +787,6 @@ private:
                 check_token(TOKEN_RPARENTHESIS);
                 break;
             case TOKEN_NOT:
-                // ok, nao tem not no codigo
                 next_token();
                 fator();
                 break;
@@ -867,7 +868,6 @@ private:
 
     std::string getTokenNameOperacao(TokenCode code) {
         switch (code) {
-            // existe or ou and?
             case TOKEN_OR:
                 return "SOMA";
             case TOKEN_AND:
