@@ -5,5 +5,5 @@
 !*.cc
 !*.h 
 !*.c
-!makefile
-!test.sh
+!src/makefile
+!src/test.sh
