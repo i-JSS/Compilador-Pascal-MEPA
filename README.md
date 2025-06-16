@@ -8,8 +8,6 @@
 
 ---
 
-# Compilador Pascal Simplificado para MEPA
-
 ## Sobre
 
 Este projeto implementa um compilador completo para a linguagem **Pascal Simplificado**, gerando como saída código intermediário para a máquina hipotética **MEPA**.
